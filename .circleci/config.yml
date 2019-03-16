@@ -1,0 +1,33 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: debian:stretch
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          key: -v3-{{ checksum ".stack"}}
+
+      - run:
+          name: Greeting
+          command: echo Hello, world.
+
+      - run:
+          name: Before Install
+          command: |
+            apt install libgmp-dev
+            mkdir -p ~/.local/bin
+            export PATH=$HOME/.local/bin:$PATH
+            curl --retry 3 -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+            stack --no-terminal --install-ghc test --only-dependencies
+
+      - run:
+          name: Testing
+          command: stack --no-terminal test --haddock --no-haddock-deps
+
+      - save_cache:
+          key: -v3-{{ checksum ".stack"}}
+          paths:
+            - "$HOME/.stack"
