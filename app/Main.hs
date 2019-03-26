@@ -1,6 +1,7 @@
 module Main where
 
-import Lib
+import BasicParsers
+import Funcs
 
 main :: IO ()
-main = someFunc
+main = print (regularParse valueExpr0 "a+b+c")
