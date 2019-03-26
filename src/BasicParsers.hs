@@ -19,10 +19,11 @@ data ValueExpr =  NumLit Integer
                | Parens ValueExpr
                  deriving (Eq,Show)
 
-
+-- Lexeme parser : consumes all whitespaces after parsing
 lexeme :: Parser a -> Parser a
 lexeme p = p <* whitespace
 
+-- integer parsing : consumes integer
 integer :: Parser Integer
 integer =  read <$> lexeme (many1 digit)
 
