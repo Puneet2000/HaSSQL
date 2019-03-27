@@ -21,6 +21,8 @@ description:         Please see the README on GitHub at <https://github.com/shra
 
 dependencies:
 - base >= 4.7 && < 5
+- text
+- parsec
 
 library:
   source-dirs: src
@@ -38,7 +40,7 @@ executables:
 
 tests:
   hasql-test:
-    main:                Spec.hs
+    main:                Tests.hs
     source-dirs:         test
     ghc-options:
     - -threaded
@@ -46,3 +48,4 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - hasql
+    - HUnit
