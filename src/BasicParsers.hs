@@ -1,5 +1,5 @@
 module BasicParsers
-(valueExpr0 ,
+(valueExpr ,
  ValueExpr(..),
  whitespace) where
 
@@ -17,6 +17,7 @@ data ValueExpr =  NumLit Integer
                | PrefOp String ValueExpr
                | BinOp ValueExpr String ValueExpr
                | Parens ValueExpr
+               | Case (Maybe ValueExpr) [(ValueExpr,ValueExpr)] (Maybe ValueExpr)
                  deriving (Eq,Show)
 
 -- Lexeme parser : consumes all whitespaces after parsing
@@ -64,8 +65,8 @@ iden = Iden <$> identifier
 parensValue :: Parser ValueExpr -> Parser ValueExpr
 parensValue val = Parens <$> parens val
 
-term0 :: Parser ValueExpr
-term0 = iden <|> num <|> parensValue valueExpr0
+term :: Parser ValueExpr
+term = caseValue valueExpr <|> iden <|> num <|> parensValue valueExpr
 
 --table :: [[E.Operator ValueExpr]]
 table = [[prefix "-", prefix "+"]
@@ -96,8 +97,8 @@ table = [[prefix "-", prefix "+"]
         E.Infix (mkBinOp name <$ keyword name) assoc
     prefixK name = E.Prefix (PrefOp name <$ keyword name)
 
-valueExpr0 :: Parser ValueExpr
-valueExpr0 = E.buildExpressionParser table term0
+valueExpr :: Parser ValueExpr
+valueExpr = E.buildExpressionParser table term
 
 lineComment :: Parser ()
 lineComment = void (try (string "--") *>
@@ -119,9 +120,35 @@ whitespace =
                    *> manyTill anyChar (try $ string "*/")
     simpleWhitespace = void $ many1 (oneOf " \t\n")
 
+blackListValueExpr :: [String] -> Parser ValueExpr -> Parser ValueExpr
+blackListValueExpr blacklist val = try $ do
+  v <- val
+  guard $ case v of 
+    Iden i | i `elem` blacklist -> False
+    _ -> True
+  return v
 
-
-
+caseValue :: Parser ValueExpr -> Parser ValueExpr
+caseValue val = do
+  void $ keyword "case"
+  testExp <- optionMaybe caseVal
+  whens <- many1 whenClause
+  els <- optionMaybe elseClause
+  void $ keyword "end"
+  return $ Case testExp whens els
+  where
+    whenClause = do
+      void $ keyword "when"
+      w <- caseVal
+      void $ keyword "then"
+      t <- caseVal
+      return (w,t)
+    elseClause = do
+      void $ keyword "else"
+      v <- caseVal
+      return v
+    caseVal = blackListValueExpr blacklist val
+    blacklist = ["case" , "when" ,"then" , "else" , "end"]
 
 
 
