@@ -8,7 +8,7 @@ import Funcs
 import BasicParsers
 
 main :: IO Counts
-main = H.runTestTT $ H.TestList $ map (makeTest valueExpr0) basicTests
+main = H.runTestTT $ H.TestList $ map (makeTest valueExpr) basicTests
 
 numLitTests :: [(String,ValueExpr)]
 numLitTests =
@@ -31,8 +31,32 @@ operatorTests =
 parensTests :: [(String,ValueExpr)]
 parensTests = [("(1)", Parens (NumLit 1))]
 
+caseTests :: [(String,ValueExpr)]
+caseTests =
+    [("case a when 1 then 2 end"
+     ,Case (Just $ Iden "a") [(NumLit 1,NumLit 2)] Nothing)
+
+    ,("case a when 1 then 2 when 3 then 4 end"
+     ,Case (Just $ Iden "a")
+           [(NumLit 1, NumLit 2)
+           ,(NumLit 3, NumLit 4)]
+           Nothing)
+
+    ,("case a when 1 then 2 when 3 then 4 else 5 end"
+     ,Case (Just $ Iden "a")
+           [(NumLit 1, NumLit 2)
+           ,(NumLit 3, NumLit 4)]
+           (Just $ NumLit 5))
+
+    ,("case when a=1 then 2 when a=3 then 4 else 5 end"
+     ,Case Nothing
+           [(BinOp (Iden "a") "=" (NumLit 1), NumLit 2)
+           ,(BinOp (Iden "a") "=" (NumLit 3), NumLit 4)]
+           (Just $ NumLit 5))
+    ]
+
 basicTests :: [(String,ValueExpr)]
-basicTests = numLitTests ++ idenTests ++ operatorTests ++ parensTests
+basicTests = numLitTests ++ idenTests ++ operatorTests ++ parensTests ++ caseTests
 
 makeTest :: (Eq a, Show a) => Parser a -> (String,a) -> H.Test
 makeTest parser (src,expected) = H.TestLabel src $ H.TestCase $ do
