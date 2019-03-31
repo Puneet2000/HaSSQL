@@ -1,7 +1,7 @@
 module BasicParsers
 (valueExpr ,
  ValueExpr(..),
- whitespace) where
+ whitespace, keyword, comma, identifier , symbol) where
 
 import Text.Parsec.String (Parser)
 import Text.ParserCombinators.Parsec.Char (oneOf, digit, string, anyChar, char, letter)
@@ -41,6 +41,9 @@ symbol s = try $ lexeme $ do
     guard (s == u)
     return s
 
+comma :: Parser Char
+comma = lexeme $ char ','
+
 openParen :: Parser Char
 openParen = lexeme $ char '('
 
@@ -59,14 +62,14 @@ parens = between openParen closeParen
 num :: Parser ValueExpr
 num = NumLit <$> integer
 
-iden :: Parser ValueExpr
-iden = Iden <$> identifier
+iden :: [String] -> Parser ValueExpr
+iden blacklist = Iden <$> identifierBlacklist blacklist
 
-parensValue :: Parser ValueExpr -> Parser ValueExpr
-parensValue val = Parens <$> parens val
+parensValue :: Parser ValueExpr
+parensValue = Parens <$> parens (valueExpr [])
 
-term :: Parser ValueExpr
-term = caseValue valueExpr <|> iden <|> num <|> parensValue valueExpr
+term :: [String] -> Parser ValueExpr
+term blacklist = caseValue <|> iden blacklist <|> num <|> parensValue
 
 --table :: [[E.Operator ValueExpr]]
 table = [[prefix "-", prefix "+"]
@@ -97,15 +100,8 @@ table = [[prefix "-", prefix "+"]
         E.Infix (mkBinOp name <$ keyword name) assoc
     prefixK name = E.Prefix (PrefOp name <$ keyword name)
 
-valueExpr :: Parser ValueExpr
-valueExpr = E.buildExpressionParser table term
-
-lineComment :: Parser ()
-lineComment = void (try (string "--") *>
-                    manyTill anyChar (void (char '\n') <|> eof))
-
-blockComment :: Parser ()
-blockComment = void (try (string "/*") *> manyTill anyChar (try $ string "*/"))
+valueExpr :: [String] -> Parser ValueExpr
+valueExpr blacklist = E.buildExpressionParser table (term blacklist)
 
 whitespace :: Parser ()
 whitespace =
@@ -120,35 +116,25 @@ whitespace =
                    *> manyTill anyChar (try $ string "*/")
     simpleWhitespace = void $ many1 (oneOf " \t\n")
 
-blackListValueExpr :: [String] -> Parser ValueExpr -> Parser ValueExpr
-blackListValueExpr blacklist val = try $ do
-  v <- val
-  guard $ case v of 
-    Iden i | i `elem` blacklist -> False
-    _ -> True
-  return v
+identifierBlacklist :: [String] -> Parser String
+identifierBlacklist bl = do
+    i <- identifier
+    guard (i `notElem` bl)
+    return i
 
-caseValue :: Parser ValueExpr -> Parser ValueExpr
-caseValue val = do
-  void $ keyword "case"
-  testExp <- optionMaybe caseVal
-  whens <- many1 whenClause
-  els <- optionMaybe elseClause
-  void $ keyword "end"
-  return $ Case testExp whens els
-  where
-    whenClause = do
-      void $ keyword "when"
-      w <- caseVal
-      void $ keyword "then"
-      t <- caseVal
-      return (w,t)
-    elseClause = do
-      void $ keyword "else"
-      v <- caseVal
-      return v
-    caseVal = blackListValueExpr blacklist val
-    blacklist = ["case" , "when" ,"then" , "else" , "end"]
+caseValue :: Parser ValueExpr
+caseValue =
+    Case
+    <$> (keyword "case" *> optionMaybe caseVal)
+    <*> many1 whenClause
+    <*> optionMaybe elseClause
+    <* keyword "end"
+ where
+   whenClause = (,) <$> (keyword "when" *> caseVal)
+                    <*> (keyword "then" *> caseVal)
+   elseClause = keyword "else" *> caseVal
+   caseVal = valueExpr blackList
+   blackList = ["case", "when", "then", "else", "end"]
 
 
 
