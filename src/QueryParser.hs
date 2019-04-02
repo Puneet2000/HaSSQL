@@ -12,7 +12,8 @@ import Control.Monad
 import qualified Text.ParserCombinators.Parsec.Expr as E
 
 import Data.Maybe ()
-import BasicParsers
+import Funcs
+import ExpressionParser
 
 data QueryExpr = Select
       {qeSelectList :: [(ValueExpr,Maybe String)]
@@ -49,21 +50,6 @@ having = keyword_ "having" *> (valueExpr [])
 orderBy :: Parser [ValueExpr]
 orderBy = keyword_ "order" *> keyword_ "by"
           *> commaSep1 (valueExpr [])
-
-keyword_ :: String -> Parser ()
-keyword_ = void . keyword
-
-symbol_ :: String -> Parser ()
-symbol_ = void . symbol
-
-commaSep1 :: Parser a -> Parser [a]
-commaSep1 = (`sepBy1` comma)
-
-identifierBlacklist :: [String] -> Parser String
-identifierBlacklist bl = do
-    i <- identifier
-    guard (i `notElem` bl)
-    return i
 
 queryExpr :: Parser QueryExpr
 queryExpr = Select

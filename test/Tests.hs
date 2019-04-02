@@ -6,7 +6,7 @@ import Text.Parsec (parse )
 import Text.ParserCombinators.Parsec.Combinator (eof)
 import Control.Applicative ((<*),(<$>), (*>), (<|>),(<$),(<*>))
 import Funcs
-import BasicParsers
+import ExpressionParser
 import QueryParser
 
 main :: IO Counts
@@ -34,32 +34,8 @@ operatorTests =
 parensTests :: [(String,ValueExpr)]
 parensTests = [("(1)", Parens (NumLit 1))]
 
-caseTests :: [(String,ValueExpr)]
-caseTests =
-    [("case a when 1 then 2 end"
-     ,Case (Just $ Iden "a") [(NumLit 1,NumLit 2)] Nothing)
-
-    ,("case a when 1 then 2 when 3 then 4 end"
-     ,Case (Just $ Iden "a")
-           [(NumLit 1, NumLit 2)
-           ,(NumLit 3, NumLit 4)]
-           Nothing)
-
-    ,("case a when 1 then 2 when 3 then 4 else 5 end"
-     ,Case (Just $ Iden "a")
-           [(NumLit 1, NumLit 2)
-           ,(NumLit 3, NumLit 4)]
-           (Just $ NumLit 5))
-
-    ,("case a when a=1 then 2 when a=3 then 4 else 5 end"
-     ,Case (Just $ Iden "a")
-           [(BinOp (Iden "a") "=" (NumLit 1), NumLit 2)
-           ,(BinOp (Iden "a") "=" (NumLit 3), NumLit 4)]
-           (Just $ NumLit 5))
-    ]
-
 basicTests :: [(String,ValueExpr)]
-basicTests = numLitTests ++ idenTests ++ operatorTests ++ parensTests ++ caseTests
+basicTests = numLitTests ++ idenTests ++ operatorTests ++ parensTests 
 
 singleSelectItemTests :: [(String,QueryExpr)]
 singleSelectItemTests =
