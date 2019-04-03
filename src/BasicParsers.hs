@@ -122,27 +122,7 @@ whitespace =
                    *> manyTill anyChar (try $ string "*/")
     simpleWhitespace = void $ many1 (oneOf " \t\n")
 
-stringToken :: Parser String
-stringToken = lexeme (char '\'' *> manyTill anyChar (char '\''))
 
-stringLit :: Parser ValueExpr
-stringLit = StringLit <$> stringToken
-
-term1 :: Parser ValueExpr
-term1 = iden <|> num <|> parensValue valueExpr <|> stringLit
-
-valueExpr1 :: Parser ValueExpr
-valueExpr1 = E.buildExpressionParser table term1
-
-star :: Parser ValueExpr
-star = Star <$ symbol "*"
-
-term4 :: Parser ValueExpr
-term4 = try iden <|> num <|> parensValue valueExpr4 <|> stringLit <|> star
-    -- If dotted identifier is also needed, it must be defined.
-
-valueExpr4 :: Parser ValueExpr
-valueExpr4 = E.buildExpressionParser table term4
 
 blackListValueExpr :: [String] -> Parser ValueExpr -> Parser ValueExpr
 blackListValueExpr blacklist val = try $ do
