@@ -112,3 +112,11 @@ makeTest parser (src,expected) = H.TestLabel src $ H.TestCase $ do
     case gote of
       Left e -> H.assertFailure $ show e
       Right got -> H.assertEqual src expected got
+
+stringLiteralTests :: [(String, ValueExpr)]
+stringLiteralTests =
+    [("''", StringLit ""),
+    ("'test'", StringLit "test")]
+
+starTests :: [(String, ValueExpr)]
+starTests = [("*", Star)]

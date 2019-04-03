@@ -74,3 +74,7 @@ symbol_ = void . symbol
 
 commaSep1 :: Parser a -> Parser [a]
 commaSep1 = (`sepBy1` comma)
+
+stringToken :: Parser String
+stringToken = lexeme (char '\'' *> manyTill anyChar (char '\''))
+
