@@ -2,6 +2,7 @@ module Main where
 
 import ExpressionParser
 import Funcs
+import InsertParser
 
 main :: IO ()
-main = print (regularParse (valueExpr []) "1+2+3")
+main = print (regularParse insertExpr "insert into table1 values (1,'Hello')")

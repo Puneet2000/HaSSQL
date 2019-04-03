@@ -8,11 +8,13 @@ import Control.Applicative ((<*),(<$>), (*>), (<|>),(<$),(<*>))
 import Funcs
 import ExpressionParser
 import QueryParser
+import InsertParser
 
 main :: IO Counts
-main = test1 *> test2
+main = test1 *> test2 *> test3
 test1 = H.runTestTT $ H.TestList $ map (makeTest (valueExpr [])) basicTests
 test2 = H.runTestTT $ H.TestList $ map (makeTest queryExpr) allQueryExprTests
+test3 = H.runTestTT $ H.TestList $ map (makeTest insertExpr) insertTests
 numLitTests :: [(String,ValueExpr)]
 numLitTests =
     [("1", NumLit 1)
@@ -35,7 +37,7 @@ parensTests :: [(String,ValueExpr)]
 parensTests = [("(1)", Parens (NumLit 1))]
 
 basicTests :: [(String,ValueExpr)]
-basicTests = numLitTests ++ idenTests ++ operatorTests ++ parensTests 
+basicTests = numLitTests ++ idenTests ++ operatorTests ++ parensTests ++ stringLiteralTests ++ starTests
 
 singleSelectItemTests :: [(String,QueryExpr)]
 singleSelectItemTests =
@@ -69,6 +71,9 @@ whereTests :: [(String,QueryExpr)]
 whereTests =
     [("select a where a = 5"
      ,makeSelect {qeSelectList = [(Iden "a",Nothing)]
+                 ,qeWhere = Just $ BinOp (Iden "a") "=" (NumLit 5)})
+    ,("select * where a = 5"
+     ,makeSelect {qeSelectList = [(Star,Nothing)]
                  ,qeWhere = Just $ BinOp (Iden "a") "=" (NumLit 5)})
     ]
 
@@ -120,3 +125,10 @@ stringLiteralTests =
 
 starTests :: [(String, ValueExpr)]
 starTests = [("*", Star)]
+
+insertTests :: [(String, InsertExpr)]
+insertTests = [("insert into table1 (c1,c2) values (1,'Hello')"
+                , makeInsert {iTable = Iden "table1", iColumns = [Iden "c1",Iden "c2"], iValues = [NumLit 1,StringLit "Hello"]}),
+                ("insert into table1 values (1,'Hello')"
+                , makeInsert {iTable = Iden "table1", iColumns = [], iValues = [NumLit 1,StringLit "Hello"]})
+              ]
