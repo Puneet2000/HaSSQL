@@ -79,17 +79,6 @@ groupByTests =
                                  ,(Iden "b",Nothing)]
                  ,qeGroupBy = [Iden "a"]
                  })
-    -- ,("select a,sum(b) group by a"
-    --  ,makeSelect {qeSelectList = [(Iden "a",Nothing)
-    --                              ,(App "sum" [Iden "b"],Nothing)]
-    --              ,qeGroupBy = [Iden "a"]
-    --              })
-    -- ,("select a,b,sum(c) group by a,b"
-    --  ,makeSelect {qeSelectList = [(Iden "a",Nothing)
-    --                              ,(Iden "b",Nothing)
-    --                              ,(App "sum" [Iden "c"],Nothing)]
-    --              ,qeGroupBy = [Iden "a",Iden "b"]
-    --              })
     ]
 
 havingTests :: [(String,QueryExpr)]
@@ -100,12 +89,7 @@ havingTests =
                  ,qeGroupBy = [Iden "a"]
                  ,qeHaving = Just $ BinOp (Iden "b") ">" (NumLit 5)
                  })
-  -- ,("select a,sum(b) group by a having sum(b) > 5"
-  --    ,makeSelect {qeSelectList = [(Iden "a",Nothing)
-  --                                ,(App "sum" [Iden "b"],Nothing)]
-  --                ,qeGroupBy = [Iden "a"]
-  --                ,qeHaving = Just $ BinOp (App "sum" [Iden "b"]) ">" (NumLit 5)
-  --                })
+
   ]
 
 orderByTests :: [(String,QueryExpr)]

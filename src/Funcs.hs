@@ -64,17 +64,7 @@ identifierBlacklist bl = do
     return i
 
 whitespace :: Parser ()
-whitespace =
-    choice [simpleWhitespace *> whitespace
-           ,lineComment *> whitespace
-           ,blockComment *> whitespace
-           ,return ()]
-  where
-    lineComment = try (string "--")
-                  *> manyTill anyChar (void (char '\n') <|> eof)
-    blockComment = try (string "/*")
-                   *> manyTill anyChar (try $ string "*/")
-    simpleWhitespace = void $ many1 (oneOf " \t\n")
+whitespace = void $ many (oneOf " \t\n")
 
 keyword_ :: String -> Parser ()
 keyword_ = void . keyword
