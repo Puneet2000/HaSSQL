@@ -1,6 +1,6 @@
 module ExpressionParser
 (valueExpr ,
- ValueExpr(..)) where
+ ValueExpr(..) , iden) where
 
 import Text.Parsec.String (Parser)
 import Text.ParserCombinators.Parsec.Char 
