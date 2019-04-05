@@ -1,7 +1,7 @@
 module CreateParser (
 CreateExpr(..),
 createExpr,
-makeCreate) where
+makeCreate , DtypeExpr(..)) where
 
 import Text.Parsec.String (Parser)
 import Text.ParserCombinators.Parsec.Char 
@@ -30,13 +30,13 @@ dtypeExpr :: Parser DtypeExpr
 dtypeExpr = int <|> str <|> bool
 
 data CreateExpr = Create
-                { iTable :: ValueExpr 
-                , iColumns :: [(ValueExpr , DtypeExpr)]
+                { iTname :: ValueExpr 
+                , iColLists:: [(ValueExpr , DtypeExpr)]
                 } deriving(Eq,Show)
 
 makeCreate :: CreateExpr
-makeCreate =  Create {iTable = Iden ""
-                     ,iColumns = []
+makeCreate =  Create {iTname = Iden ""
+                     ,iColLists = []
                  }
 
 tableName :: Parser ValueExpr
