@@ -2,7 +2,7 @@ module Main where
 
 import ExpressionParser
 import Funcs
-import InsertParser
+import CreateParser
 
 main :: IO ()
-main = print (regularParse insertExpr "insert into table1 values (1,'Hello')")
+main = print (regularParse createExpr "create table table1 ( c1 INTEGER , c2 INTEGER )")

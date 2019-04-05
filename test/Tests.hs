@@ -9,12 +9,14 @@ import Funcs
 import ExpressionParser
 import QueryParser
 import InsertParser
+import CreateParser
 
 main :: IO Counts
-main = test1 *> test2 *> test3
+main = test1 *> test2 *> test3 *> test4
 test1 = H.runTestTT $ H.TestList $ map (makeTest (valueExpr [])) basicTests
 test2 = H.runTestTT $ H.TestList $ map (makeTest queryExpr) allQueryExprTests
 test3 = H.runTestTT $ H.TestList $ map (makeTest insertExpr) insertTests
+test4 = H.runTestTT $ H.TestList $ map (makeTest createExpr) createTests
 numLitTests :: [(String,ValueExpr)]
 numLitTests =
     [("1", NumLit 1)
@@ -131,4 +133,11 @@ insertTests = [("insert into table1 (c1,c2) values (1,'Hello')"
                 , makeInsert {iTable = Iden "table1", iColumns = [Iden "c1",Iden "c2"], iValues = [NumLit 1,StringLit "Hello"]}),
                 ("insert into table1 values (1,'Hello')"
                 , makeInsert {iTable = Iden "table1", iColumns = [], iValues = [NumLit 1,StringLit "Hello"]})
+              ]
+
+createTests :: [(String , CreateExpr)]
+createTests = [("create table table1 ( c1 INTEGER , c2 STRING , c3 BOOL )"
+                , makeCreate {iTname = Iden "table1", iColLists = [(Iden "c1",Integer),(Iden "c2",String),(Iden "c3",Bool)]}),
+                ("create table table1 ( c1 INTEGER , c2 INTEGER )"
+                , makeCreate {iTname = Iden "table1", iColLists = [(Iden "c1",Integer),(Iden "c2",Integer)]})
               ]
