@@ -1,6 +1,4 @@
-module ExpressionParser
-(valueExpr ,
- ValueExpr(..)) where
+module ExpressionParser where
 
 import Text.Parsec.String (Parser)
 import Text.ParserCombinators.Parsec.Char 
@@ -31,7 +29,7 @@ parensValue :: Parser ValueExpr
 parensValue = Parens <$> parens (valueExpr [])
 
 term :: [String] -> Parser ValueExpr
-term blacklist = iden blacklist <|> num <|> parensValue
+term blacklist = iden blacklist <|> num <|> parensValue <|> stringLit <|> star
 
 --table :: [[E.Operator ValueExpr]]
 table = [[prefix "-", prefix "+"]
@@ -77,9 +75,3 @@ valueExpr1 = E.buildExpressionParser table term1
 star :: Parser ValueExpr
 star = Star <$ symbol "*"
 
-term4 :: Parser ValueExpr
-term4 = try (iden []) <|> num <|> parensValue <|> stringLit <|> star
-    -- If dotted identifier is also needed, it must be defined.
-
-valueExpr4 :: Parser ValueExpr
-valueExpr4 = E.buildExpressionParser table term4
