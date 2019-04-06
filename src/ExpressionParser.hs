@@ -16,7 +16,8 @@ data ValueExpr =  NumLit Integer
                | BinOp ValueExpr String ValueExpr
                | Parens ValueExpr
                | StringLit String
-               | Star
+               | Star 
+               | BoolLit Bool
                  deriving (Eq,Show)
 
 num :: Parser ValueExpr
@@ -75,3 +76,17 @@ valueExpr1 = E.buildExpressionParser table term1
 star :: Parser ValueExpr
 star = Star <$ symbol "*"
 
+evaluate :: Either ParseError ValueExpr -> Either ParseError Integer
+evaluate (Right e) = Right (evaluateExpr e)
+evaluate (Left e) = Left e
+
+evaluateExpr :: ValueExpr -> Integer
+evaluateExpr (NumLit n) = n
+evaluateExpr (Parens v) = evaluateExpr v
+evaluateExpr (PrefOp "-" v) = -(evaluateExpr v)
+evaluateExpr (PrefOp "+" v) = (evaluateExpr v)
+evaluateExpr (BinOp v1 "^" v2) = (evaluateExpr v1)^(evaluateExpr v2)
+evaluateExpr (BinOp v1 "*" v2) = (evaluateExpr v1)*(evaluateExpr v2)
+evaluateExpr (BinOp v1 "/" v2) = div (evaluateExpr v1) (evaluateExpr v2)
+evaluateExpr (BinOp v1 "%" v2) = mod (evaluateExpr v1) (evaluateExpr v2)
+evaluateExpr (BinOp v1 "+" v2) = (evaluateExpr v1) + (evaluateExpr v2)
