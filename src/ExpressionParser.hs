@@ -7,9 +7,8 @@ import Text.Parsec (parse , ParseError , try)
 import Control.Applicative (many, (<*),(<$>), (*>), (<|>),(<$),(<*>))
 import Control.Monad (void,guard)
 import qualified Text.ParserCombinators.Parsec.Expr as E
-import qualified Control.Exception as Ex
-import System.IO
-
+import Data.Map (Map)
+import qualified Data.Map as Map
 import Funcs
 
 data ValueExpr =  NumLit Integer
@@ -36,7 +35,7 @@ parensValue :: Parser ValueExpr
 parensValue = Parens <$> parens (valueExpr [])
 
 term :: [String] -> Parser ValueExpr
-term blacklist = boolean <|> iden blacklist  <|> num <|> parensValue <|> stringLit <|> star
+term blacklist = try boolean <|> iden blacklist  <|> num <|> parensValue <|> stringLit <|> star
 
 --table :: [[E.Operator ValueExpr]]
 table = [[prefix "-", prefix "+"]
@@ -79,36 +78,44 @@ valueExpr1 = E.buildExpressionParser table term1
 star :: Parser ValueExpr
 star = Star <$ symbol "*"
 
-evaluate :: Either ParseError ValueExpr -> EvalType
-evaluate (Right e) = Int (evaluateExpr e)
-evaluate (Left e) = Error (show e)
+evaluate :: (Map String ValueExpr) -> Either ParseError ValueExpr -> EvalType
+evaluate map (Right e) = Int (evaluateExpr map e)
+evaluate map (Left e) = Error (show e)
 
-evaluate2 :: Either ParseError ValueExpr -> EvalType
-evaluate2 (Right e) = Boolean (evaluateExpr2 e)
-evaluate2 (Left e) = Error (show e)
+evaluate2 :: (Map String ValueExpr) -> Either ParseError ValueExpr -> EvalType
+evaluate2 map (Right e) = Boolean (evaluateExpr2 map e)
+evaluate2 map (Left e) = Error (show e)
 
-evaluateExpr :: ValueExpr -> Integer
-evaluateExpr (NumLit n) = n
-evaluateExpr (Parens v) = evaluateExpr v
-evaluateExpr (PrefOp "-" v) = -(evaluateExpr v)
-evaluateExpr (PrefOp "+" v) = (evaluateExpr v)
-evaluateExpr (BinOp v1 "^" v2) = (evaluateExpr v1)^(evaluateExpr v2)
-evaluateExpr (BinOp v1 "*" v2) = (evaluateExpr v1)*(evaluateExpr v2)
-evaluateExpr (BinOp v1 "/" v2) = div (evaluateExpr v1) (evaluateExpr v2)
-evaluateExpr (BinOp v1 "%" v2) = mod (evaluateExpr v1) (evaluateExpr v2)
-evaluateExpr (BinOp v1 "+" v2) = (evaluateExpr v1) + (evaluateExpr v2)
+evaluateExpr :: (Map String ValueExpr) -> ValueExpr -> Integer
+evaluateExpr map (Iden s) = do
+ let val = Map.lookup s map
+ case val of
+  Just (NumLit i) -> i
+evaluateExpr map (NumLit n) = n
+evaluateExpr map (Parens v) = evaluateExpr map v
+evaluateExpr map (PrefOp "-" v) = -(evaluateExpr map v)
+evaluateExpr map (PrefOp "+" v) = (evaluateExpr map v)
+evaluateExpr map (BinOp v1 "^" v2) = (evaluateExpr map v1)^(evaluateExpr map v2)
+evaluateExpr map (BinOp v1 "*" v2) = (evaluateExpr map v1)*(evaluateExpr map v2)
+evaluateExpr map (BinOp v1 "/" v2) = div (evaluateExpr map v1) (evaluateExpr map v2)
+evaluateExpr map (BinOp v1 "%" v2) = mod (evaluateExpr map v1) (evaluateExpr map v2)
+evaluateExpr map (BinOp v1 "+" v2) = (evaluateExpr map v1) + (evaluateExpr map v2)
 
-evaluateExpr2 :: ValueExpr -> Bool
-evaluateExpr2 (BoolLit True) = True
-evaluateExpr2 (BoolLit False) = False
-evaluateExpr2 (Parens v) = evaluateExpr2 v
-evaluateExpr2 (BinOp v1 "<=" v2) = (evaluateExpr v1) <= (evaluateExpr v2)
-evaluateExpr2 (BinOp v1 ">=" v2) = (evaluateExpr v1) >= (evaluateExpr v2)
-evaluateExpr2 (BinOp v1 "!=" v2) = (evaluateExpr v1) /= (evaluateExpr v2)
-evaluateExpr2 (BinOp v1 ">" v2) = (evaluateExpr v1) > (evaluateExpr v2)
-evaluateExpr2 (BinOp v1 "<" v2) = (evaluateExpr v1) < (evaluateExpr v2)
-evaluateExpr2 (BinOp v1 "=" v2) = (evaluateExpr v1) == (evaluateExpr v2)
-evaluateExpr2 (PrefOp "not" v) = not (evaluateExpr2 v)
-evaluateExpr2 (BinOp v1 "and" v2) = (&&) (evaluateExpr2 v1) (evaluateExpr2 v2)
-evaluateExpr2 (BinOp v1 "or" v2) = (||) (evaluateExpr2 v1) (evaluateExpr2 v2)
+evaluateExpr2 :: (Map String ValueExpr) -> ValueExpr -> Bool
+evaluateExpr2 map (Iden s) = do
+ let val = Map.lookup s map
+ case val of
+  Just (BoolLit i) -> i
+evaluateExpr2 map (BoolLit True) = True
+evaluateExpr2 map (BoolLit False) = False
+evaluateExpr2 map (Parens v) = evaluateExpr2 map v
+evaluateExpr2 map (BinOp v1 "<=" v2) = (evaluateExpr map v1) <= (evaluateExpr map v2)
+evaluateExpr2 map (BinOp v1 ">=" v2) = (evaluateExpr map v1) >= (evaluateExpr map v2)
+evaluateExpr2 map (BinOp v1 "!=" v2) = (evaluateExpr map v1) /= (evaluateExpr map v2)
+evaluateExpr2 map (BinOp v1 ">" v2) = (evaluateExpr map v1) > (evaluateExpr map v2)
+evaluateExpr2 map (BinOp v1 "<" v2) = (evaluateExpr map v1) < (evaluateExpr map v2)
+evaluateExpr2 map (BinOp v1 "=" v2) = (evaluateExpr map v1) == (evaluateExpr map v2)
+evaluateExpr2 map (PrefOp "not" v) = not (evaluateExpr2 map v)
+evaluateExpr2 map (BinOp v1 "and" v2) = (&&) (evaluateExpr2 map v1) (evaluateExpr2 map v2)
+evaluateExpr2 map (BinOp v1 "or" v2) = (||) (evaluateExpr2 map v1) (evaluateExpr2 map v2)
 
