@@ -31,8 +31,8 @@ operatorTests :: [(String,ValueExpr)]
 operatorTests =
    map (\o -> (o ++ " a", PrefOp o (Iden "a"))) ["not", "+", "-"]
    ++ map (\o -> ("a " ++ o ++ " b", BinOp (Iden "a") o (Iden "b")))
-          ["=",">","<", ">=", "<=", "!=", "<>"
-          ,"and", "or", "+", "-", "*", "/", "||", "like"]
+          ["=",">","<", ">=", "<=", "!="
+          ,"and", "or", "+", "-", "*", "/"]
 
 
 parensTests :: [(String,ValueExpr)]

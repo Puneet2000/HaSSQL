@@ -14,6 +14,9 @@ jobs:
           name: Resolve/Update Dependencies
           command: stack setup
       - run:
+          name: Building
+          command: stack build
+      - run:
           name: Run tests
           command: stack test
       - run:
