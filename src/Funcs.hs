@@ -78,3 +78,10 @@ commaSep1 = (`sepBy1` comma)
 stringToken :: Parser String
 stringToken = lexeme (char '\'' *> manyTill anyChar (char '\''))
 
+boolToken :: Parser Bool
+boolToken = do
+  i <- identifier
+  guard (i `elem` ["True","False"])
+  if i == "True" 
+    then return True 
+  else return False

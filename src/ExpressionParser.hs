@@ -7,6 +7,8 @@ import Text.Parsec (parse , ParseError , try)
 import Control.Applicative (many, (<*),(<$>), (*>), (<|>),(<$),(<*>))
 import Control.Monad (void,guard)
 import qualified Text.ParserCombinators.Parsec.Expr as E
+import qualified Control.Exception as Ex
+import System.IO
 
 import Funcs
 
@@ -20,17 +22,21 @@ data ValueExpr =  NumLit Integer
                | BoolLit Bool
                  deriving (Eq,Show)
 
+data EvalType = Int Integer | Boolean Bool | Error String deriving (Eq,Show)
 num :: Parser ValueExpr
 num = NumLit <$> integer
 
 iden :: [String] -> Parser ValueExpr
-iden blacklist = Iden <$> identifierBlacklist blacklist
+iden blacklist = Iden <$> identifierBlacklist (blacklist++["True","False","not","and","or"])
+
+boolean :: Parser ValueExpr
+boolean =  BoolLit <$> boolToken
 
 parensValue :: Parser ValueExpr
 parensValue = Parens <$> parens (valueExpr [])
 
 term :: [String] -> Parser ValueExpr
-term blacklist = iden blacklist <|> num <|> parensValue <|> stringLit <|> star
+term blacklist = boolean <|> iden blacklist  <|> num <|> parensValue <|> stringLit <|> star
 
 --table :: [[E.Operator ValueExpr]]
 table = [[prefix "-", prefix "+"]
@@ -42,10 +48,7 @@ table = [[prefix "-", prefix "+"]
           ,binary "-" E.AssocLeft]
          ,[binary "<=" E.AssocRight
           ,binary ">=" E.AssocRight
-          ,binaryK "like" E.AssocNone
-          ,binary "!=" E.AssocRight
-          ,binary "<>" E.AssocRight
-          ,binary "||" E.AssocRight]
+          ,binary "!=" E.AssocRight]
          ,[binary "<" E.AssocNone
           ,binary ">" E.AssocNone]
          ,[binary "=" E.AssocRight]
@@ -76,9 +79,13 @@ valueExpr1 = E.buildExpressionParser table term1
 star :: Parser ValueExpr
 star = Star <$ symbol "*"
 
-evaluate :: Either ParseError ValueExpr -> Either ParseError Integer
-evaluate (Right e) = Right (evaluateExpr e)
-evaluate (Left e) = Left e
+evaluate :: Either ParseError ValueExpr -> EvalType
+evaluate (Right e) = Int (evaluateExpr e)
+evaluate (Left e) = Error (show e)
+
+evaluate2 :: Either ParseError ValueExpr -> EvalType
+evaluate2 (Right e) = Boolean (evaluateExpr2 e)
+evaluate2 (Left e) = Error (show e)
 
 evaluateExpr :: ValueExpr -> Integer
 evaluateExpr (NumLit n) = n
@@ -90,3 +97,18 @@ evaluateExpr (BinOp v1 "*" v2) = (evaluateExpr v1)*(evaluateExpr v2)
 evaluateExpr (BinOp v1 "/" v2) = div (evaluateExpr v1) (evaluateExpr v2)
 evaluateExpr (BinOp v1 "%" v2) = mod (evaluateExpr v1) (evaluateExpr v2)
 evaluateExpr (BinOp v1 "+" v2) = (evaluateExpr v1) + (evaluateExpr v2)
+
+evaluateExpr2 :: ValueExpr -> Bool
+evaluateExpr2 (BoolLit True) = True
+evaluateExpr2 (BoolLit False) = False
+evaluateExpr2 (Parens v) = evaluateExpr2 v
+evaluateExpr2 (BinOp v1 "<=" v2) = (evaluateExpr v1) <= (evaluateExpr v2)
+evaluateExpr2 (BinOp v1 ">=" v2) = (evaluateExpr v1) >= (evaluateExpr v2)
+evaluateExpr2 (BinOp v1 "!=" v2) = (evaluateExpr v1) /= (evaluateExpr v2)
+evaluateExpr2 (BinOp v1 ">" v2) = (evaluateExpr v1) > (evaluateExpr v2)
+evaluateExpr2 (BinOp v1 "<" v2) = (evaluateExpr v1) < (evaluateExpr v2)
+evaluateExpr2 (BinOp v1 "=" v2) = (evaluateExpr v1) == (evaluateExpr v2)
+evaluateExpr2 (PrefOp "not" v) = not (evaluateExpr2 v)
+evaluateExpr2 (BinOp v1 "and" v2) = (&&) (evaluateExpr2 v1) (evaluateExpr2 v2)
+evaluateExpr2 (BinOp v1 "or" v2) = (||) (evaluateExpr2 v1) (evaluateExpr2 v2)
+
