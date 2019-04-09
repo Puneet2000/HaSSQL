@@ -10,13 +10,28 @@ import ExpressionParser
 import QueryParser
 import InsertParser
 import CreateParser
+import Data.Map (Map)
+import qualified Data.Map as Map
 
 main :: IO Counts
-main = test1 *> test2 *> test3 *> test4
+main = test1 *> test2 *> test3 *> test4 *> do
+ let map0 = Map.empty
+ let map1 = Map.insert "x" (BoolLit False) map0
+ let map2 = Map.insert "y" (NumLit 1) map1
+ let map3 = Map.insert "z" (NumLit 2) map2
+ let map4 = Map.insert "p" (NumLit 3) map3
+ let map5 = Map.insert "q" (NumLit 4) map4
+ let map6 = Map.insert "r" (BoolLit True) map5
+ test5 map6
+ test6 map6
+
 test1 = H.runTestTT $ H.TestList $ map (makeTest (valueExpr [])) basicTests
 test2 = H.runTestTT $ H.TestList $ map (makeTest queryExpr) allQueryExprTests
 test3 = H.runTestTT $ H.TestList $ map (makeTest insertExpr) insertTests
 test4 = H.runTestTT $ H.TestList $ map (makeTest createExpr) createTests
+test5 m = H.runTestTT $ H.TestList $ map (makeTest2 evaluate m (valueExpr [])) integerEvaluationTests
+test6 m = H.runTestTT $ H.TestList $ map (makeTest2 evaluate2 m (valueExpr [])) boolEvaluationTests
+
 numLitTests :: [(String,ValueExpr)]
 numLitTests =
     [("1", NumLit 1)
@@ -31,8 +46,8 @@ operatorTests :: [(String,ValueExpr)]
 operatorTests =
    map (\o -> (o ++ " a", PrefOp o (Iden "a"))) ["not", "+", "-"]
    ++ map (\o -> ("a " ++ o ++ " b", BinOp (Iden "a") o (Iden "b")))
-          ["=",">","<", ">=", "<=", "!=", "<>"
-          ,"and", "or", "+", "-", "*", "/", "||", "like"]
+          ["=",">","<", ">=", "<=", "!="
+          ,"and", "or", "+", "-", "*", "/"]
 
 
 parensTests :: [(String,ValueExpr)]
@@ -113,6 +128,11 @@ orderByTests =
 allQueryExprTests :: [(String,QueryExpr)]
 allQueryExprTests = concat [selectListTests ++ whereTests ++ groupByTests ++ havingTests ++ orderByTests]
 
+makeTest2 :: ((Map String ValueExpr) -> Either ParseError ValueExpr -> EvalType) -> (Map String ValueExpr) -> Parser ValueExpr -> (String,EvalType) -> H.Test
+makeTest2 eval m parser (src,expected) = H.TestLabel src $ H.TestCase $ do
+    let gote = eval m (parse (whitespace *> parser <* eof) "" src)
+    H.assertEqual src expected gote
+
 makeTest :: (Eq a, Show a) => Parser a -> (String,a) -> H.Test
 makeTest parser (src,expected) = H.TestLabel src $ H.TestCase $ do
     let gote = parse (whitespace *> parser <* eof) "" src
@@ -141,3 +161,13 @@ createTests = [("create table table1 ( c1 INTEGER , c2 STRING , c3 BOOL )"
                 ("create table table1 ( c1 INTEGER , c2 INTEGER )"
                 , makeCreate {iTname = Iden "table1", iColLists = [(Iden "c1",Integer),(Iden "c2",Integer)]})
               ]
+
+
+
+integerEvaluationTests :: [(String , EvalType)]
+integerEvaluationTests = [("y+z+p",Int 6),("y*(z+p)",Int 5),("(y+z)*p",Int 9),("(q/z)+(q%3)",Int 3)]
+
+boolEvaluationTests :: [(String , EvalType)]
+boolEvaluationTests = [("x or r",Boolean True),("(x and not r) or (not x and r)",Boolean True),("r and (q>p)",Boolean True)]
+
+
