@@ -56,38 +56,11 @@ sampleCommands = do
 
     return 0
 
-data Database = Database {
-    dName :: String,
-    dTables :: Data.Map.Map String Table
-} deriving (Show)
-
--- Returns new database with name and tables
-newDatabase :: String -> Data.Map.Map String Table -> Maybe Database
-newDatabase name tables = Just Database {
-    dName = name,
-    dTables = tables
-}
-
-data Table = Table {
-    tName :: String,
-    tColumns :: Data.Map.Map String Column
-} deriving (Show)
-
--- Returns new table with name and columns
-newTable :: String -> Data.Map.Map String Column -> Maybe Table
-newTable name columns = Just Table {
-    tName = name,
-    tColumns = columns
-}
-
--- For datatype in a column
-data Datatype = INT | STRING | BOOL deriving (Show, Eq)
-
 data Column = Column {
     cName :: String,
     cDatatype :: Datatype, -- For Num => Num, String => String, Bool => Bool
     cValues :: [String]
-} deriving (Show)
+} deriving (Show, Eq)
 
 -- Returns new column with name, datatype and values
 newColumn :: String -> Datatype -> [String] -> Maybe Column
@@ -97,6 +70,53 @@ newColumn name datatype values = Just Column {
     cValues = values
 }
 
+data Table = Table {
+    tName :: String,
+    tColumns :: Data.Map.Map String Column
+} deriving (Show, Eq)
+
+-- Returns new table with name and columns
+newTable :: String -> Data.Map.Map String Column -> Maybe Table
+newTable name columns = Just Table {
+    tName = name,
+    tColumns = columns
+}
+    
+data Database = Database {
+    dName :: String,
+    dTables :: Data.Map.Map String Table
+} deriving (Show, Eq)
+
+-- Returns new database with name and tables
+newDatabase :: String -> Data.Map.Map String Table -> Maybe Database
+newDatabase name tables = Just Database {
+    dName = name,
+    dTables = tables
+}
+
+-- For datatype in a column
+data Datatype = INT | STRING | BOOL deriving (Show, Eq)
+
+-- True if database contains table named tableName
+containsTable :: String -> Maybe Database -> Bool
+containsTable tableName database = not (isNothing $ getTable tableName database)
+
+-- True if database -> tableName contains a column named columnName
+containsColumn :: String -> Maybe Database -> String -> Bool
+containsColumn columnName database tableName = not (isNothing $ getColumn columnName database tableName)
+
+-- Returns table from database with name tableName
+getTable :: String -> Maybe Database -> Maybe Table
+getTable tableName database
+    | isNothing database = Nothing
+    | otherwise = Data.Map.lookup tableName $ dTables $ fromJust database
+
+-- Returns column with columnName in database -> tableName
+getColumn :: String -> Maybe Database -> String -> Maybe Column
+getColumn columnName database tableName
+    | isNothing database || not (containsTable tableName database) = Nothing
+    | otherwise = Data.Map.lookup columnName (tColumns $ fromJust $ getTable tableName database)
+
 -- Adds a table to database with tableName
 addTable :: String -> Maybe Database -> Maybe Database
 addTable tableName database
@@ -105,16 +125,6 @@ addTable tableName database
         dName = dName $ fromJust database,
         dTables = Data.Map.insert tableName (fromJust $ newTable tableName Data.Map.empty) (dTables $ fromJust database)
     }
-
--- Returns table from database with name tableName
-getTable :: String -> Maybe Database -> Maybe Table
-getTable tableName database
-    | isNothing database = Nothing
-    | otherwise = Data.Map.lookup tableName $ dTables $ fromJust database
-
--- True if database contains table named tableName
-containsTable :: String -> Maybe Database -> Bool
-containsTable tableName database = not (isNothing $ getTable tableName database)
 
 -- Adds column to table object with name and datatype
 addColumnToTable :: String -> Datatype -> Table -> Table
@@ -127,16 +137,6 @@ addColumn columnName datatype database tableName
     | isNothing database || not (containsTable tableName database) = Nothing
     | otherwise = newDatabase (dName $ fromJust database)
             (Data.Map.adjust (addColumnToTable columnName datatype) tableName $ dTables $ fromJust database)
-
--- Returns column with columnName in database -> tableName
-getColumn :: String -> Maybe Database -> String -> Maybe Column
-getColumn columnName database tableName
-    | isNothing database || not (containsTable tableName database) = Nothing
-    | otherwise = Data.Map.lookup columnName (tColumns $ fromJust $ getTable tableName database)
-
--- True if database -> tableName contains a column named columnName
-containsColumn :: String -> Maybe Database -> String -> Bool
-containsColumn columnName database tableName = not (isNothing $ getColumn columnName database tableName)
 
 -- Input value and datatype to be inserted in a single column
 insertOne :: String -> Datatype -> Maybe Database -> String -> String -> Maybe Database
