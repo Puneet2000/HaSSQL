@@ -2,7 +2,8 @@ module DatabaseTests where
 import Test.HUnit as H
 import qualified Database as DB
 import Data.Maybe(fromJust)
-import Data.Map as M
+import qualified Data.Map as M
+import Data.List (elem)
 
 databaseTests :: IO H.Counts
 databaseTests = do
@@ -20,11 +21,18 @@ databaseTests = do
             H.TestLabel "addNewTable" testAddNewTable,
             H.TestLabel "addColumnToTable" testAddColumnToTable,
             H.TestLabel "addColumn" testAddColumn]
+    let findTests = H.TestList [
+            H.TestLabel "find" testFind]
+    let insertTests = H.TestList [
+            H.TestLabel "insertOne" testInsertOne,
+            H.TestLabel "insert" testInsert]
 
     runTestTT newTests
     runTestTT containsTests
     runTestTT getTests
     runTestTT addTests
+    runTestTT findTests
+    runTestTT insertTests
 
 testNewColumn :: H.Test
 testNewColumn =
@@ -53,14 +61,23 @@ testNewDatabase =
         H.assertEqual "Name not set properly" "testDB" $ DB.dName myNewDB
         H.assertEqual "Tables not set properly" myTables $ DB.dTables myNewDB
     )
-    
-sampleIntCol = fromJust $ DB.newColumn "sampleIntCol" DB.INT ["testVal1i", "testVal2i"]
-sampleStringCol = fromJust $ DB.newColumn "sampleStringCol" DB.STRING ["testVal1s", "testVal2s"]
-sampleColMap = M.insert "sampleStringCol" sampleStringCol $ M.singleton "sampleIntCol" sampleIntCol
-sampleTableOne = fromJust $ DB.newTable "sampleTableOne" sampleColMap
-sampleTableTwo = fromJust $ DB.newTable "sampleTableTwo" sampleColMap
-sampleTableMap = M.insert "sampleTableOne" sampleTableOne $ M.singleton "sampleTableTwo" sampleTableTwo
-sampleDB = DB.newDatabase "testDB" sampleTableMap
+
+sampleIntCol = DB.Column {
+    DB.cName = "sampleIntCol", DB.cDatatype = DB.INT, DB.cValues = ["123", "987"]
+}
+sampleStringCol = DB.Column {
+    DB.cName = "sampleStringCol", DB.cDatatype = DB.STRING, DB.cValues = ["testVal1s", "testVal2s"]
+}
+sampleColMap = M.fromList [("sampleIntCol", sampleIntCol),("sampleStringCol", sampleStringCol)]
+sampleTableOne = DB.Table {
+    DB.tName = "sampleTableOne", DB.tColumns = sampleColMap
+}
+sampleTableTwo = DB.Table {
+    DB.tName = "sampleTableTwo", DB.tColumns = sampleColMap
+}
+sampleDB = Just DB.Database {
+    DB.dName = "testDB", DB.dTables = M.fromList [("sampleTableOne", sampleTableOne), ("sampleTableTwo", sampleTableTwo)]
+}
 
 testContainsTable :: H.Test
 testContainsTable = 
@@ -81,6 +98,13 @@ testGetTable =
     in H.TestCase (do
         H.assertEqual "getTable for valid table does not work properly" (Just sampleTableOne) receivedTable
         H.assertEqual "getTable for Nothing does not work properly" Nothing nothingTable
+    )
+
+testCount :: H.Test
+testCount = H.TestCase(do
+        H.assertEqual "count does not work properly" 2 (DB.count (Just sampleTableOne))
+        H.assertEqual "count /= 0 for Nothing" 0 (DB.count Nothing)
+        H.assertEqual "count /= 0 even if there are no columns" 0 (DB.count $ DB.newTable "myNewTable" $ M.fromList [])
     )
 
 testGetColumn :: H.Test
@@ -115,4 +139,34 @@ testAddColumn =
         foundCol = DB.getColumn "myNewCol" $ DB.getTable "sampleTableOne" myNewDB
     in H.TestCase (do
         H.assertEqual "addColumn does not work properly" addedCol foundCol
+    )
+
+testInsertOne :: H.Test
+testInsertOne = 
+    let myNewDB = DB.insertOne "newVali" DB.INT sampleDB "sampleTableOne" "sampleIntCol"
+        prevLength = DB.count $ DB.getTable "sampleTableOne" sampleDB 
+        newLength = DB.count $ DB.getTable "sampleTableOne" myNewDB 
+    in H.TestCase (do
+        H.assertEqual "Length did not increase by one on insertOne" (prevLength + 1) newLength
+    )
+
+testFind :: H.Test
+testFind =
+    let condition = (\value -> (let intValue = read value :: Integer in if intValue > 0 then True else False))
+        foundVals = DB.find condition sampleDB "sampleTableOne" "sampleIntCol"
+        expectedVals = [
+            [("sampleIntCol", DB.INT, "987"), ("sampleStringCol", DB.STRING, "testVal2s")],
+            [("sampleIntCol", DB.INT, "123"), ("sampleStringCol", DB.STRING, "testVal1s")]]
+    in H.TestCase (do
+        H.assertBool "find does not work properly" (all (\val -> elem val expectedVals ) foundVals)
+    )
+
+testInsert :: H.Test
+testInsert = 
+    let myNewDB = DB.insert ["sampleIntCol", "sampleStringCol"] ["99", "newString"] [DB.INT, DB.STRING] sampleDB "sampleTableOne"
+        search99 = DB.find (\val -> val == "99") myNewDB "sampleTableOne" "sampleIntCol"
+        expected99 = [
+            [("sampleIntCol", DB.INT, "99"), ("sampleStringCol", DB.STRING, "newString")]]
+    in H.TestCase (do
+        H.assertBool "insert is not working properly!" (all (\val -> elem val expected99) search99)
     )

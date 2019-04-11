@@ -111,6 +111,13 @@ getTable tableName database
     | isNothing database = Nothing
     | otherwise = Data.Map.lookup tableName $ dTables $ fromJust database
 
+count :: Maybe Table -> Int
+count table
+    | isNothing table || Data.Map.size (tColumns $ fromJust table) == 0 = 0
+    | otherwise = let firstCol = snd $ Data.Map.elemAt 0 (tColumns $ fromJust table)
+        in length (cValues firstCol)
+
+
 -- Returns column with columnName in database -> tableName
 getColumn :: String -> Maybe Table -> Maybe Column
 getColumn columnName table
@@ -165,7 +172,8 @@ getColList table db= Data.Map.elems (tColumns $ fromJust $ getTable table db)
 
 -- Finds entry at index in table and returns as [tuples] where tuple = (col name, col type, col value)
 findEntryAtIndex :: String -> Maybe Database -> Int -> [(String, Datatype, String)]
-findEntryAtIndex tableName db index = [(cName col, cDatatype col, (cValues col) !! index) | col <- getColList tableName db]
+findEntryAtIndex tableName db index = [ cell | col <- getColList tableName db,
+    let cell = (cName col, cDatatype col, (cValues col) !! index)]
 
 -- Finds all entries in (db -> table) with value, datype and returns as [entries] where entry=[tuples] where tuple = (col name, col type, col value)
 find :: (String->Bool) -> Maybe Database -> String -> String -> [[(String, Datatype, String)]]
@@ -175,7 +183,7 @@ find condition db tableName columnName
         let col = getColumn columnName $ getTable tableName db
         let indices = [n | n <- [0..(length (cValues $ fromJust col))-1], let value = (cValues $ fromJust col) !! n, condition value ]
         if length indices == 0 then [] -- no such index exists
-        else [list | index <- indices, let list = findEntryAtIndex tableName db index]
+        else [entry | index <- indices, let entry = findEntryAtIndex tableName db index]
 
 deleteFromList :: Int -> [String] -> [String]
 deleteFromList index xs = (take index xs) ++ reverse(take (length xs - index - 1) (reverse xs))
