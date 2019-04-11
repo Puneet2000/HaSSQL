@@ -1,6 +1,6 @@
 module DatabaseTests where
 import Test.HUnit as H
-import Database as DB
+import qualified Database as DB
 import Data.Maybe(fromJust)
 import Data.Map as M
 
@@ -16,9 +16,15 @@ databaseTests = do
     let getTests = H.TestList [
             H.TestLabel "getTable" testGetTable,
             H.TestLabel "getColumn" testGetColumn]
+    let addTests = H.TestList [
+            H.TestLabel "addNewTable" testAddNewTable,
+            H.TestLabel "addColumnToTable" testAddColumnToTable,
+            H.TestLabel "addColumn" testAddColumn]
+
     runTestTT newTests
     runTestTT containsTests
     runTestTT getTests
+    runTestTT addTests
 
 testNewColumn :: H.Test
 testNewColumn =
@@ -79,10 +85,34 @@ testGetTable =
 
 testGetColumn :: H.Test
 testGetColumn = 
-    let receivedColumn = DB.getColumn "sampleStringCol" sampleDB "sampleTableOne"
-        nothingColumn = DB.getColumn "InvalidColumn" sampleDB "sampleTableOne"
+    let receivedColumn = DB.getColumn "sampleStringCol" $ DB.getTable "sampleTableOne" sampleDB
+        nothingColumn = DB.getColumn "InvalidColumn" $ DB.getTable "sampleTableOne" sampleDB
     in H.TestCase(do
         H.assertEqual "getColumn for valid column does not work properly" (Just sampleStringCol) receivedColumn
         H.assertEqual "getColumn for Nothing does not work properly" Nothing nothingColumn
     )
 
+testAddNewTable :: H.Test
+testAddNewTable =
+    let myNewDB = DB.addNewTable "myNewTable" sampleDB
+        searchedTable = DB.getTable "myNewTable" myNewDB
+    in H.TestCase (do
+        H.assertEqual "addNewTable not adding a new Table" (DB.newTable "myNewTable" M.empty) searchedTable
+    )
+
+testAddColumnToTable :: H.Test
+testAddColumnToTable = 
+    let myNewTable = DB.addColumnToTable "myNewCol" DB.BOOL sampleTableOne
+        searchedCol = DB.getColumn "myNewCol" (Just myNewTable)
+    in H.TestCase (do
+        H.assertEqual "addColumnToTable does not add an empty column to table" (DB.newColumn "myNewCol" DB.BOOL []) searchedCol
+    )
+
+testAddColumn :: H.Test
+testAddColumn =
+    let myNewDB = DB.addColumn "myNewCol" DB.BOOL sampleDB "sampleTableOne"
+        addedCol = DB.newColumn "myNewCol" DB.BOOL []
+        foundCol = DB.getColumn "myNewCol" $ DB.getTable "sampleTableOne" myNewDB
+    in H.TestCase (do
+        H.assertEqual "addColumn does not work properly" addedCol foundCol
+    )

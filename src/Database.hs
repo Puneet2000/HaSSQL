@@ -11,11 +11,11 @@ sampleCommands = do
     let my_db = newDatabase "my_db 1" Data.Map.empty
     -- print $ my_db
 
-    let my_db_1 = addTable "table 1" my_db
+    let my_db_1 = addNewTable "table 1" my_db
     -- print $ my_db_1
 
     let my_db = my_db_1
-    let my_db_1 = addTable "table 2" my_db
+    let my_db_1 = addNewTable "table 2" my_db
     -- print $ my_db_1
 
     let my_db = my_db_1
@@ -47,10 +47,10 @@ sampleCommands = do
     let my_db = my_db_1
     let my_db_1 = insert ["Name", "Phone number"] ["Stewart", "12321"] [STRING, INT] my_db "table 1"
 
-    let x = find "Stewart" my_db_1 "table 1" "Name"
-    print(my_db_1)
+    let x = find (\value -> value == "Stewart") my_db_1 "table 1" "Name"
+    print(x)
     let my_db = deleteEntryAtIndex 3 my_db_1 "table 1"
-    print(my_db)
+    -- print(my_db)
     
     -- print my_db_1
 
@@ -103,7 +103,7 @@ containsTable tableName database = not (isNothing $ getTable tableName database)
 
 -- True if database -> tableName contains a column named columnName
 containsColumn :: String -> Maybe Database -> String -> Bool
-containsColumn columnName database tableName = not (isNothing $ getColumn columnName database tableName)
+containsColumn columnName database tableName = not (isNothing $ getColumn columnName $ getTable tableName database)
 
 -- Returns table from database with name tableName
 getTable :: String -> Maybe Database -> Maybe Table
@@ -112,14 +112,14 @@ getTable tableName database
     | otherwise = Data.Map.lookup tableName $ dTables $ fromJust database
 
 -- Returns column with columnName in database -> tableName
-getColumn :: String -> Maybe Database -> String -> Maybe Column
-getColumn columnName database tableName
-    | isNothing database || not (containsTable tableName database) = Nothing
-    | otherwise = Data.Map.lookup columnName (tColumns $ fromJust $ getTable tableName database)
+getColumn :: String -> Maybe Table -> Maybe Column
+getColumn columnName table
+    | isNothing table = Nothing
+    | otherwise = Data.Map.lookup columnName (tColumns $ fromJust table)
 
 -- Adds a table to database with tableName
-addTable :: String -> Maybe Database -> Maybe Database
-addTable tableName database
+addNewTable :: String -> Maybe Database -> Maybe Database
+addNewTable tableName database
     | isNothing database = Nothing
     | otherwise = Just Database {
         dName = dName $ fromJust database,
@@ -143,7 +143,7 @@ insertOne :: String -> Datatype -> Maybe Database -> String -> String -> Maybe D
 insertOne value datatype database tableName columnName
     | isNothing database || not (containsTable tableName database) || not (containsColumn columnName database tableName)
         = database -- Invalid table name or col name
-    | datatype /= cDatatype (fromJust $ getColumn columnName database tableName )= database -- Datatypes dont match
+    | datatype /= cDatatype (fromJust $ getColumn columnName $ getTable tableName database )= database -- Datatypes dont match
     | otherwise = newDatabase (dName $ fromJust database) (Data.Map.adjust f tableName $ dTables $ fromJust database)
     where f = (\table -> fromJust $ newTable (tName table) (Data.Map.adjust g columnName $ tColumns table))
           g = (\column -> fromJust $ newColumn (cName column) (cDatatype column) ((cValues column) ++ [value]))
@@ -168,12 +168,12 @@ findEntryAtIndex :: String -> Maybe Database -> Int -> [(String, Datatype, Strin
 findEntryAtIndex tableName db index = [(cName col, cDatatype col, (cValues col) !! index) | col <- getColList tableName db]
 
 -- Finds all entries in (db -> table) with value, datype and returns as [entries] where entry=[tuples] where tuple = (col name, col type, col value)
-find :: String -> Maybe Database -> String -> String -> [[(String, Datatype, String)]]
-find value db tableName columnName
+find :: (String->Bool) -> Maybe Database -> String -> String -> [[(String, Datatype, String)]]
+find condition db tableName columnName
     | isNothing db || not (containsColumn columnName db tableName) = []
     | otherwise = do
-        let col = getColumn columnName db tableName
-        let indices = elemIndices value (cValues $ fromJust col)
+        let col = getColumn columnName $ getTable tableName db
+        let indices = [n | n <- [0..(length (cValues $ fromJust col))-1], let value = (cValues $ fromJust col) !! n, condition value ]
         if length indices == 0 then [] -- no such index exists
         else [list | index <- indices, let list = findEntryAtIndex tableName db index]
 
