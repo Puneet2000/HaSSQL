@@ -1,7 +1,7 @@
 module CreateParser (
 CreateExpr(..),
 createExpr,
-makeCreate , DtypeExpr(..)) where
+makeCreate ) where
 
 import Text.Parsec.String (Parser)
 import Text.ParserCombinators.Parsec.Char 
@@ -14,24 +14,23 @@ import qualified Text.ParserCombinators.Parsec.Expr as E
 import Data.Maybe ()
 import Funcs
 import ExpressionParser
+import Database
 
-data DtypeExpr = Integer | String | Bool deriving(Eq,Show)
+int :: Parser Datatype 
+int = INT <$ keyword "INTEGER"
 
-int :: Parser DtypeExpr 
-int = Integer <$ keyword "INTEGER"
+str :: Parser Datatype
+str =  STRING <$ keyword "STRING"
 
-str :: Parser DtypeExpr
-str =  String <$ keyword "STRING"
+bool :: Parser Datatype
+bool = BOOL <$ keyword "BOOL"
 
-bool :: Parser DtypeExpr
-bool = Bool <$ keyword "BOOL"
-
-dtypeExpr :: Parser DtypeExpr
+dtypeExpr :: Parser Datatype
 dtypeExpr = int <|> str <|> bool
 
 data CreateExpr = Create
                 { iTname :: ValueExpr 
-                , iColLists:: [(ValueExpr , DtypeExpr)]
+                , iColLists:: [(ValueExpr , Datatype)]
                 } deriving(Eq,Show)
 
 makeCreate :: CreateExpr
@@ -42,11 +41,24 @@ makeCreate =  Create {iTname = Iden ""
 tableName :: Parser ValueExpr
 tableName = keyword_ "create" *> keyword_ "table" *> iden []
 
-column :: Parser (ValueExpr, DtypeExpr)
+column :: Parser (ValueExpr, Datatype)
 column = (,) <$> iden [] <*> dtypeExpr
 
-columnList :: Parser [(ValueExpr,DtypeExpr)]
+columnList :: Parser [(ValueExpr,Datatype)]
 columnList = parens (commaSep1 column)
 
 createExpr :: Parser CreateExpr
 createExpr = Create <$> tableName <*> columnList
+
+addColumnList :: [(ValueExpr ,Datatype)] -> Maybe Database -> String -> Maybe Database
+addColumnList [] db tb = db
+addColumnList (x : xs) db tb = addColumnList xs (addColumn (eval (fst x)) (snd x) db tb) tb
+
+eval :: ValueExpr -> String
+eval (Iden s) = s
+
+evaluateCreate :: Either ParseError CreateExpr -> Maybe Database -> Maybe Database
+evaluateCreate (Right expr) db = do
+ let db_1 = addNewTable (eval (iTname expr)) db
+ addColumnList (iColLists expr) db_1 (eval (iTname expr))
+
