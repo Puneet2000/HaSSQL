@@ -21,29 +21,17 @@ databaseTests = do
             H.TestLabel "addNewTable" testAddNewTable,
             H.TestLabel "addColumnToTable" testAddColumnToTable,
             H.TestLabel "addColumn" testAddColumn]
-<<<<<<< HEAD
     -- let findTests = H.TestList [
     --         H.TestLabel "find" testFind]
     let insertTests = H.TestList [
             H.TestLabel "insertOne" testInsertOne]
             --H.TestLabel "insert" testInsert
-=======
-    let findTests = H.TestList [
-            H.TestLabel "find" testFind]
-    let insertTests = H.TestList [
-            H.TestLabel "insertOne" testInsertOne,
-            H.TestLabel "insert" testInsert]
->>>>>>> master
 
     runTestTT newTests
     runTestTT containsTests
     runTestTT getTests
     runTestTT addTests
-<<<<<<< HEAD
     -- runTestTT findTests
-=======
-    runTestTT findTests
->>>>>>> master
     runTestTT insertTests
 
 testNewColumn :: H.Test
@@ -162,7 +150,6 @@ testInsertOne =
         H.assertEqual "Length did not increase by one on insertOne" (prevLength + 1) newLength
     )
 
-<<<<<<< HEAD
 -- TODO : testFind with ExpressionParser.valueExpr as argument
 -- testFind :: H.Test
 -- testFind =
@@ -185,25 +172,3 @@ testInsertOne =
 --     in H.TestCase (do
 --         H.assertBool "insert is not working properly!" (all (\val -> elem val expected99) search99)
 --     )
-=======
-testFind :: H.Test
-testFind =
-    let condition = (\value -> (let intValue = read value :: Integer in if intValue > 0 then True else False))
-        foundVals = DB.find condition sampleDB "sampleTableOne" "sampleIntCol"
-        expectedVals = [
-            [("sampleIntCol", DB.INT, "987"), ("sampleStringCol", DB.STRING, "testVal2s")],
-            [("sampleIntCol", DB.INT, "123"), ("sampleStringCol", DB.STRING, "testVal1s")]]
-    in H.TestCase (do
-        H.assertBool "find does not work properly" (all (\val -> elem val expectedVals ) foundVals)
-    )
-
-testInsert :: H.Test
-testInsert = 
-    let myNewDB = DB.insert ["sampleIntCol", "sampleStringCol"] ["99", "newString"] [DB.INT, DB.STRING] sampleDB "sampleTableOne"
-        search99 = DB.find (\val -> val == "99") myNewDB "sampleTableOne" "sampleIntCol"
-        expected99 = [
-            [("sampleIntCol", DB.INT, "99"), ("sampleStringCol", DB.STRING, "newString")]]
-    in H.TestCase (do
-        H.assertBool "insert is not working properly!" (all (\val -> elem val expected99) search99)
-    )
->>>>>>> master
