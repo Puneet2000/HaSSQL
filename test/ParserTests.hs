@@ -10,6 +10,7 @@ import ExpressionParser
 import QueryParser
 import InsertParser
 import CreateParser
+import Database(Datatype(..))
 import Data.Map (Map)
 import qualified Data.Map as Map
 
@@ -157,9 +158,9 @@ insertTests = [("insert into table1 (c1,c2) values (1,'Hello')"
 
 createTests :: [(String , CreateExpr)]
 createTests = [("create table table1 ( c1 INTEGER , c2 STRING , c3 BOOL )"
-                , makeCreate {iTname = Iden "table1", iColLists = [(Iden "c1",Integer),(Iden "c2",String),(Iden "c3",Bool)]}),
+                , makeCreate {iTname = Iden "table1", iColLists = [(Iden "c1",INT),(Iden "c2",STRING),(Iden "c3",BOOL)]}),
                 ("create table table1 ( c1 INTEGER , c2 INTEGER )"
-                , makeCreate {iTname = Iden "table1", iColLists = [(Iden "c1",Integer),(Iden "c2",Integer)]})
+                , makeCreate {iTname = Iden "table1", iColLists = [(Iden "c1",INT),(Iden "c2",INT)]})
               ]
 
 

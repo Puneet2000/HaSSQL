@@ -1,7 +1,7 @@
 module CreateParser (
 CreateExpr(..),
 createExpr,
-makeCreate ) where
+makeCreate, evaluateCreate ) where
 
 import Text.Parsec.String (Parser)
 import Text.ParserCombinators.Parsec.Char 

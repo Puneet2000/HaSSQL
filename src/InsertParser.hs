@@ -1,7 +1,7 @@
 module InsertParser (
 InsertExpr(..),
 insertExpr,
-makeInsert) where
+makeInsert,evaluateInsert) where
 
 import Text.Parsec.String (Parser)
 import Text.ParserCombinators.Parsec.Char 
@@ -14,6 +14,7 @@ import qualified Text.ParserCombinators.Parsec.Expr as E
 import Data.Maybe ()
 import Funcs
 import ExpressionParser
+import Database
 
 data InsertExpr = Insert 
                 { iTable :: ValueExpr 
@@ -34,8 +35,29 @@ columns = parens (commaSep1 (iden []))
 
 values :: Parser [ValueExpr]
 values =  keyword_ "values" *> parens (commaSep1 literal)
- where literal = num <|> stringLit
+ where literal = num <|> stringLit <|> boolean
 
 insertExpr :: Parser InsertExpr
 insertExpr =  Insert <$> tableName <*> option [] columns <*> values
+
+evaluateInsert :: Either ParseError InsertExpr -> Maybe Database -> Maybe Database
+evaluateInsert (Right expr) db =  insert (getColumnNames (iColumns expr)) (getValues (iValues expr)) (getDataType (iValues expr)) db (eval (iTable expr))
+ where eval (Iden s) = s
+
+getDataType :: [ValueExpr] -> [Datatype]
+getDataType [] = []
+getDataType ((StringLit _) : xs) = STRING : getDataType xs
+getDataType ((NumLit _) : xs) = INT : getDataType xs
+getDataType ((BoolLit _) : xs) = BOOL : getDataType xs
+
+getColumnNames :: [ValueExpr] -> [String]
+getColumnNames [] = []
+getColumnNames ((Iden s) : xs) = s : getColumnNames xs
+
+getValues :: [ValueExpr] -> [String]
+getValues [] = []
+getValues ((StringLit s) : xs ) = s : getValues xs
+getValues ((BoolLit b) : xs ) = (show b) : getValues xs
+getValues ((NumLit i) : xs ) = (show i) : getValues xs
+
 

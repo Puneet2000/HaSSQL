@@ -4,6 +4,7 @@ import ExpressionParser
 import Funcs
 import CreateParser
 import Database
+import InsertParser
 
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -11,8 +12,15 @@ import qualified Data.Map as Map
 main :: IO ()
 -- main = print (regularParse createExpr "create table table1 ( c1 INTEGER , c2 INTEGER )")
 main = do
-    sampleCommands
-    print "Hello, World!"
+    let cr = regularParse createExpr "create table table1 ( c1 INTEGER , c2 STRING , c3 BOOL)"
+    let mdb = newDatabase "mdb1" Map.empty
+    let mdb2 = evaluateCreate cr mdb
+    print(mdb2)
+    let ins = regularParse insertExpr "insert into table1 (c1,c2,c3) values (1,'Hello',True)"
+    let mdb3 = evaluateInsert ins mdb2
+    let ins = regularParse insertExpr "insert into table1 (c1,c2,c3) values (2,'Puneet',False)"
+    let mdb4 = evaluateInsert ins mdb3
+    print(mdb4)
     -- let m = parseWithWSEof (valueExpr []) "a or (x>=y) or (z<=m)"
     -- print(m)
     -- let map0 = Map.empty
