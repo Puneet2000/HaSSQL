@@ -3,11 +3,14 @@ module Database where
 import qualified Data.Map
 import Data.Maybe (fromJust, isNothing)
 import Data.List (elemIndex, elemIndices)
+<<<<<<< HEAD
 import qualified ExpressionParser as Exp
 import qualified Text.Parsec.Error
 
 import qualified Funcs as F
 import qualified CreateParser as CP
+=======
+>>>>>>> master
 
 -- for debugging only. To be removed once completed - called from main right now!
 sampleCommands = do
@@ -29,8 +32,12 @@ sampleCommands = do
 
     let my_db_1 = addColumn "Name" STRING my_db "table 1"
     let my_db = my_db_1
+<<<<<<< HEAD
     let my_db_1 = addColumn "Phone_number" INT my_db "table 1"
     let my_db = addColumn "BoolCol" BOOL my_db_1 "table 1"
+=======
+    let my_db_1 = addColumn "Phone number" INT my_db "table 1"
+>>>>>>> master
     -- print my_db_1
 
     -- let my_db = my_db_1
@@ -41,6 +48,7 @@ sampleCommands = do
     -- let my_db_1 = insertOne "45" INT my_db "table 1" "column 1 for table 1"
     -- print my_db_1
 
+<<<<<<< HEAD
     let my_db_1 = insert ["Name", "Phone_number", "BoolCol"] ["Martha", "12345", "False"] [STRING, INT, BOOL] my_db "table 1"
     -- print my_db_1
     print(my_db_1)
@@ -70,6 +78,23 @@ sampleCommands = do
     -- let x = find (\value -> value == "Stewart") my_db_1 "table 1" "Name"
     -- print(x)
     -- let my_db = deleteEntryAtIndex 3 my_db_1 "table 1"
+=======
+    let my_db = my_db_1
+    let my_db_1 = insert ["Name", "Phone number"] ["Martha", "12345"] [STRING, INT] my_db "table 1"
+    -- print my_db_1
+
+    let my_db = my_db_1
+    let my_db_1 = insert ["Name", "Phone number"] ["Stewart", "78910"] [STRING, INT] my_db "table 1"
+    -- print my_db_1
+
+
+    let my_db = my_db_1
+    let my_db_1 = insert ["Name", "Phone number"] ["Stewart", "12321"] [STRING, INT] my_db "table 1"
+
+    let x = find (\value -> value == "Stewart") my_db_1 "table 1" "Name"
+    print(x)
+    let my_db = deleteEntryAtIndex 3 my_db_1 "table 1"
+>>>>>>> master
     -- print(my_db)
     
     -- print my_db_1
@@ -175,6 +200,7 @@ insertOne value datatype database tableName columnName
     where f = (\table -> fromJust $ newTable (tName table) (Data.Map.adjust g columnName $ tColumns table))
           g = (\column -> fromJust $ newColumn (cName column) (cDatatype column) ((cValues column) ++ [value]))
 
+<<<<<<< HEAD
 isValidDatatype :: Maybe Table -> [String] -> [Datatype] -> Bool
 isValidDatatype t colList typeList
     | isNothing t || (colList == [] && typeList == [] )= True
@@ -189,6 +215,12 @@ isValidDatatype t colList typeList
 insert :: [String] -> [String] -> [Datatype] -> Maybe Database -> String -> Maybe Database
 insert columnNames values datatypes db tableName 
     | length values /= length datatypes || not (isValidDatatype (getTable tableName db) columnNames datatypes) || length columnNames /= length values = db --Mismatch in length of names, values and datatypes
+=======
+-- Input - list of colNames <-> corresponding list of values <-> corresponding list of datatypes
+insert :: [String] -> [String] -> [Datatype] -> Maybe Database -> String -> Maybe Database
+insert columnNames values datatypes db tableName 
+    | length values /= length datatypes || length columnNames /= length values = db --Mismatch in length of names, values and datatypes
+>>>>>>> master
     | length values == 0 = db -- Base case
     | otherwise = do
         let v = head values; vs = tail values
@@ -205,6 +237,7 @@ findEntryAtIndex :: String -> Maybe Database -> Int -> [(String, Datatype, Strin
 findEntryAtIndex tableName db index = [ cell | col <- getColList tableName db,
     let cell = (cName col, cDatatype col, (cValues col) !! index)]
 
+<<<<<<< HEAD
 litValue :: String -> Datatype -> Exp.ValueExpr
 litValue value datatype
     | datatype == INT = Exp.NumLit (read value :: Integer)
@@ -220,6 +253,17 @@ find (Right condition) db tableName
             columns = Data.Map.elems $ tColumns $ fromJust table 
             indices = [n | n <- [0..nEntries-1], let map = Data.Map.fromList [(colName, value) | col <- columns, let colName = cName col, let value = litValue ((cValues col) !! n) (cDatatype col)], Exp.evaluateExpr2 map condition]
         in [findEntryAtIndex tableName db n | n <- indices]
+=======
+-- Finds all entries in (db -> table) with value, datype and returns as [entries] where entry=[tuples] where tuple = (col name, col type, col value)
+find :: (String->Bool) -> Maybe Database -> String -> String -> [[(String, Datatype, String)]]
+find condition db tableName columnName
+    | isNothing db || not (containsColumn columnName db tableName) = []
+    | otherwise = do
+        let col = getColumn columnName $ getTable tableName db
+        let indices = [n | n <- [0..(length (cValues $ fromJust col))-1], let value = (cValues $ fromJust col) !! n, condition value ]
+        if length indices == 0 then [] -- no such index exists
+        else [entry | index <- indices, let entry = findEntryAtIndex tableName db index]
+>>>>>>> master
 
 deleteFromList :: Int -> [String] -> [String]
 deleteFromList index xs = (take index xs) ++ reverse(take (length xs - index - 1) (reverse xs))
