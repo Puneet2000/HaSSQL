@@ -76,6 +76,9 @@ sampleCommands = do
 
     return 0
 
+
+-- I understand that the code in this file is terrible. That's because of my f*cked up data-structure. If I have sufficient time to rebuild the structure, I will do it. But it's gonna be a lot of work.
+
 data Column = Column {
     cName :: String,
     cDatatype :: Datatype, -- For Num => Num, String => String, Bool => Bool
@@ -92,13 +95,15 @@ newColumn name datatype values = Just Column {
 
 data Table = Table {
     tName :: String,
+    tColNameList :: [String],
     tColumns :: Data.Map.Map String Column
 } deriving (Show, Eq)
 
 -- Returns new table with name and columns
-newTable :: String -> Data.Map.Map String Column -> Maybe Table
-newTable name columns = Just Table {
+newTable :: String -> ([String], Data.Map.Map String Column) -> Maybe Table
+newTable name (colNameList, columns) = Just Table {
     tName = name,
+    tColNameList = colNameList,
     tColumns = columns
 }
     
@@ -123,7 +128,7 @@ containsTable tableName database = not (isNothing $ getTable tableName database)
 
 -- True if database -> tableName contains a column named columnName
 containsColumn :: String -> Maybe Database -> String -> Bool
-containsColumn columnName database tableName = not (isNothing $ getColumn columnName $ getTable tableName database)
+containsColumn columnName database tableName = elem columnName (tColNameList $ fromJust $ getTable tableName database)
 
 -- Returns table from database with name tableName
 getTable :: String -> Maybe Database -> Maybe Table
@@ -150,13 +155,13 @@ addNewTable tableName database
     | isNothing database = Nothing
     | otherwise = Just Database {
         dName = dName $ fromJust database,
-        dTables = Data.Map.insert tableName (fromJust $ newTable tableName Data.Map.empty) (dTables $ fromJust database)
+        dTables = Data.Map.insert tableName (fromJust $ newTable tableName ([],Data.Map.empty)) (dTables $ fromJust database)
     }
 
 -- Adds column to table object with name and datatype
 addColumnToTable :: String -> Datatype -> Table -> Table
 addColumnToTable columnName datatype table = fromJust $ newTable (tName table)
-        (Data.Map.insert columnName (fromJust $ newColumn columnName datatype []) (tColumns table))
+        (columnName:(tColNameList table), (Data.Map.insert columnName (fromJust $ newColumn columnName datatype []) (tColumns table)))
 
 -- Adds a column to database -> tableName with name=columnName, datatype=datatype
 addColumn :: String -> Datatype -> Maybe Database -> String -> Maybe Database
@@ -172,7 +177,7 @@ insertOne value datatype database tableName columnName
         = database -- Invalid table name or col name
     | datatype /= cDatatype (fromJust $ getColumn columnName $ getTable tableName database )= database -- Datatypes dont match
     | otherwise = newDatabase (dName $ fromJust database) (Data.Map.adjust f tableName $ dTables $ fromJust database)
-    where f = (\table -> fromJust $ newTable (tName table) (Data.Map.adjust g columnName $ tColumns table))
+    where f = (\table -> fromJust $ newTable (tName table) (tColNameList table, (Data.Map.adjust g columnName $ tColumns table)))
           g = (\column -> fromJust $ newColumn (cName column) (cDatatype column) ((cValues column) ++ [value]))
 
 isValidDatatype :: Maybe Table -> [String] -> [Datatype] -> Bool
@@ -197,6 +202,14 @@ insert columnNames values datatypes db tableName
         let new_db = insertOne v d db tableName col
         insert cols vs ds new_db tableName
 
+insertDefault :: [String] -> Maybe Database -> String -> Maybe Database
+insertDefault values db tableName
+    | not datatypeOK colNameList values table = db
+    | otherwise =
+            colNameList = tColNameList $ fromJust table
+        in insert colNameList values (map (\name -> cDatatype $ fromJust $ getColumn name table) colNameList) db tableName
+    where table = getTable tableName db
+          colNameList = if isNothing table then [] else tColNameList $ fromJust table
 -- Utility functions for find*
 getColList table db= Data.Map.elems (tColumns $ fromJust $ getTable table db)
 
@@ -231,6 +244,6 @@ deleteEntryAtIndex index db tableName
     | otherwise = do
         let my_db = fromJust db
         newDatabase (dName my_db) (Data.Map.adjust f tableName $ dTables my_db)
-    where f = \table -> (fromJust $ newTable (tName table) (Data.Map.fromList new_cols))
+    where f = \table -> (fromJust $ newTable (tName table) (tColNameList table, (Data.Map.fromList new_cols)))
           cols = Data.Map.elems $ tColumns $ fromJust $ getTable tableName db
           new_cols = [(cName col, fromJust $ newColumn (cName col) (cDatatype col) (deleteFromList index $ cValues col)) | col <- cols]
