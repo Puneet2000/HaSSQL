@@ -58,6 +58,14 @@ integrationInsertTests = [("insert into table1 (c1,c2,c3) values (1,'Hello',True
                          , tColumns = Map.fromList [("c1",Column {cName = "c1"
                          , cDatatype = INT, cValues = ["2"]})
                          ,("c2",Column {cName = "c2", cDatatype = STRING, cValues = ["Puneet"]})
-                         ,("c3",Column {cName = "c3", cDatatype = BOOL, cValues = ["False"]})]})]}))]
+                         ,("c3",Column {cName = "c3", cDatatype = BOOL, cValues = ["False"]})]})]}))
+
+                         -- ,("insert into table1 values (1,'Hello',True)"
+                         -- ,Just (Database {dName = "mdb1"
+                         -- , dTables = Map.fromList [("table1",Table {tName = "table1"
+                         -- , tColumns = Map.fromList [("c1",Column {cName = "c1", cDatatype = INT, cValues = ["1"]})
+                         -- ,("c2",Column {cName = "c2", cDatatype = STRING, cValues = ["Hello"]})
+                         -- ,("c3",Column {cName = "c3", cDatatype = BOOL, cValues = ["True"]})]})]}))
+                         ]
 
 

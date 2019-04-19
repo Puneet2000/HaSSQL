@@ -7,7 +7,7 @@ import qualified ExpressionParser as Exp
 import qualified Text.Parsec.Error
 
 import qualified Funcs as F
-import qualified CreateParser as CP
+
 
 -- for debugging only. To be removed once completed - called from main right now!
 sampleCommands = do
