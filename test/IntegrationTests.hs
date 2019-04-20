@@ -34,6 +34,7 @@ integrationCreateTests :: [(String , Maybe Database)]
 integrationCreateTests = [("create table table1 ( c1 INTEGER , c2 STRING , c3 BOOL)"
                      ,Just (Database {dName = "mdb1"
                     , dTables = Map.fromList [("table1",Table {tName = "table1"
+                    ,tColNameList = ["c1","c2","c3"]
                     , tColumns = Map.fromList [("c1",Column {cName = "c1", cDatatype = INT, cValues = []})
                     ,("c2",Column {cName = "c2", cDatatype = STRING, cValues = []})
                     ,("c3",Column {cName = "c3", cDatatype = BOOL, cValues = []})]})]}))
@@ -41,6 +42,7 @@ integrationCreateTests = [("create table table1 ( c1 INTEGER , c2 STRING , c3 BO
                     ,("create table table1 ( c1 INTEGER , c2 INTEGER )"
                      , Just (Database {dName = "mdb1"
                     , dTables = Map.fromList [("table1",Table {tName = "table1"
+                    ,tColNameList = ["c1","c2"]
                     , tColumns = Map.fromList [("c1",Column {cName = "c1", cDatatype = INT, cValues = []})
                     ,("c2",Column {cName = "c2", cDatatype = INT, cValues = []})]})]}))]
 
@@ -48,6 +50,7 @@ integrationInsertTests :: [(String , Maybe Database)]
 integrationInsertTests = [("insert into table1 (c1,c2,c3) values (1,'Hello',True)"
                          ,Just (Database {dName = "mdb1"
                          , dTables = Map.fromList [("table1",Table {tName = "table1"
+                        ,tColNameList = ["c1","c2","c3"]
                          , tColumns = Map.fromList [("c1",Column {cName = "c1", cDatatype = INT, cValues = ["1"]})
                          ,("c2",Column {cName = "c2", cDatatype = STRING, cValues = ["Hello"]})
                          ,("c3",Column {cName = "c3", cDatatype = BOOL, cValues = ["True"]})]})]}))
@@ -55,6 +58,7 @@ integrationInsertTests = [("insert into table1 (c1,c2,c3) values (1,'Hello',True
                          ,("insert into table1 (c1,c2,c3) values (2,'Puneet',False)"
                          , Just (Database {dName = "mdb1"
                          , dTables = Map.fromList [("table1",Table {tName = "table1"
+                         ,tColNameList = ["c1","c2","c3"]
                          , tColumns = Map.fromList [("c1",Column {cName = "c1"
                          , cDatatype = INT, cValues = ["2"]})
                          ,("c2",Column {cName = "c2", cDatatype = STRING, cValues = ["Puneet"]})
