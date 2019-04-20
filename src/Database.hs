@@ -7,7 +7,7 @@ import qualified ExpressionParser as Exp
 import qualified Text.Parsec.Error
 
 import qualified Funcs as F
-import qualified CreateParser as CP
+
 
 -- for debugging only. To be removed once completed - called from main right now!
 sampleCommands = do
@@ -161,7 +161,7 @@ addNewTable tableName database
 -- Adds column to table object with name and datatype
 addColumnToTable :: String -> Datatype -> Table -> Table
 addColumnToTable columnName datatype table = fromJust $ newTable (tName table)
-        (columnName:(tColNameList table), (Data.Map.insert columnName (fromJust $ newColumn columnName datatype []) (tColumns table)))
+        ((tColNameList table) ++ [columnName], (Data.Map.insert columnName (fromJust $ newColumn columnName datatype []) (tColumns table)))
 
 -- Adds a column to database -> tableName with name=columnName, datatype=datatype
 addColumn :: String -> Datatype -> Maybe Database -> String -> Maybe Database
