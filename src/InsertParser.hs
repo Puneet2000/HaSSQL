@@ -41,7 +41,9 @@ insertExpr :: Parser InsertExpr
 insertExpr =  Insert <$> tableName <*> option [] columns <*> values
 
 evaluateInsert :: Either ParseError InsertExpr -> Maybe Database -> Maybe Database
-evaluateInsert (Right expr) db =  insert (getColumnNames (iColumns expr)) (getValues (iValues expr)) (getDataType (iValues expr)) db (eval (iTable expr))
+evaluateInsert (Right expr) db 
+ | (iColumns expr == []) =  insertDefault (getValues (iValues expr)) db (eval (iTable expr))
+ | otherwise = insert (getColumnNames (iColumns expr)) (getValues (iValues expr)) (getDataType (iValues expr)) db (eval (iTable expr))
  where eval (Iden s) = s
 
 getDataType :: [ValueExpr] -> [Datatype]
