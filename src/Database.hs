@@ -204,9 +204,9 @@ insert columnNames values datatypes db tableName
 
 insertDefault :: [String] -> Maybe Database -> String -> Maybe Database
 insertDefault values db tableName
-    | not datatypeOK colNameList values table = db
+    -- | not datatypeOK colNameList values table = db
     | otherwise =
-            colNameList = tColNameList $ fromJust table
+        let colNameList = tColNameList $ fromJust table
         in insert colNameList values (map (\name -> cDatatype $ fromJust $ getColumn name table) colNameList) db tableName
     where table = getTable tableName db
           colNameList = if isNothing table then [] else tColNameList $ fromJust table
