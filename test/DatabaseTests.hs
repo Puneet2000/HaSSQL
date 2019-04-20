@@ -46,7 +46,7 @@ testNewColumn =
 testNewTable :: H.Test
 testNewTable =
     let myCols = M.singleton "testCol" $ fromJust $ DB.newColumn "testCol" DB.INT ["testVal1", "testVal2"]
-        myNewTable = fromJust $ DB.newTable "testTable" myCols
+        myNewTable = fromJust $ DB.newTable "testTable" (["testCol"], myCols)
     in H.TestCase (do
         H.assertEqual "Name not set properly" "testTable" $ DB.tName myNewTable
         H.assertEqual "Cols not set properly" myCols $ DB.tColumns myNewTable
@@ -55,7 +55,7 @@ testNewTable =
 testNewDatabase :: H.Test
 testNewDatabase =
     let myCols = M.singleton "testCol" $ fromJust $ DB.newColumn "testCol" DB.INT ["testVal1", "testVal2"]
-        myTables = M.singleton "testTable" $ fromJust $ DB.newTable "testTable" myCols
+        myTables = M.singleton "testTable" $ fromJust $ DB.newTable "testTable" (["testCol"], myCols)
         myNewDB = fromJust $ DB.newDatabase "testDB" myTables
     in H.TestCase (do
         H.assertEqual "Name not set properly" "testDB" $ DB.dName myNewDB
@@ -70,10 +70,10 @@ sampleStringCol = DB.Column {
 }
 sampleColMap = M.fromList [("sampleIntCol", sampleIntCol),("sampleStringCol", sampleStringCol)]
 sampleTableOne = DB.Table {
-    DB.tName = "sampleTableOne", DB.tColumns = sampleColMap
+    DB.tName = "sampleTableOne", DB.tColumns = sampleColMap, DB.tColNameList = ["sampleIntCol", "sampleStringCol"]
 }
 sampleTableTwo = DB.Table {
-    DB.tName = "sampleTableTwo", DB.tColumns = sampleColMap
+    DB.tName = "sampleTableTwo", DB.tColumns = sampleColMap, DB.tColNameList = ["sampleIntCol", "sampleStringCol"]
 }
 sampleDB = Just DB.Database {
     DB.dName = "testDB", DB.dTables = M.fromList [("sampleTableOne", sampleTableOne), ("sampleTableTwo", sampleTableTwo)]
@@ -104,7 +104,7 @@ testCount :: H.Test
 testCount = H.TestCase(do
         H.assertEqual "count does not work properly" 2 (DB.count (Just sampleTableOne))
         H.assertEqual "count /= 0 for Nothing" 0 (DB.count Nothing)
-        H.assertEqual "count /= 0 even if there are no columns" 0 (DB.count $ DB.newTable "myNewTable" $ M.fromList [])
+        H.assertEqual "count /= 0 even if there are no columns" 0 (DB.count $ DB.newTable "myNewTable" $ ([], M.fromList []))
     )
 
 testGetColumn :: H.Test
@@ -121,7 +121,7 @@ testAddNewTable =
     let myNewDB = DB.addNewTable "myNewTable" sampleDB
         searchedTable = DB.getTable "myNewTable" myNewDB
     in H.TestCase (do
-        H.assertEqual "addNewTable not adding a new Table" (DB.newTable "myNewTable" M.empty) searchedTable
+        H.assertEqual "addNewTable not adding a new Table" (DB.newTable "myNewTable" ([], M.empty)) searchedTable
     )
 
 testAddColumnToTable :: H.Test
