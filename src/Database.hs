@@ -2,7 +2,8 @@ module Database where
 
 import qualified Data.Map
 import Data.Maybe (fromJust, isNothing)
-import Data.List (elemIndex, elemIndices)
+import Data.List (elemIndex, elemIndices, sortBy)
+-- import Data.List.Key (sort)
 import qualified ExpressionParser as Exp
 import qualified Text.Parsec.Error
 
@@ -51,12 +52,16 @@ sampleCommands = do
     let m = F.parseWithWSEof (Exp.valueExpr []) "BoolCol"
     let n = F.parseWithWSEof (Exp.valueExpr []) "Phone_number > 0"
     let o = F.parseWithWSEof (Exp.valueExpr []) "Phone_number = 12345"
+    let p = F.parseWithWSEof (Exp.valueExpr []) "-1 * Phone_number"
     print m
     let x = find m my_db_1 "table 1"
     print x
     print n
     let x = find n my_db_1 "table 1"
     print x
+    print("Y=-------------------->")
+    let y = orderBy p x
+    print y
     print o
     let x = find o my_db_1 "table 1"
     print x
@@ -79,13 +84,17 @@ sampleCommands = do
 
 -- I understand that the code in this file is terrible. That's because of my f*cked up data-structure. If I have sufficient time to rebuild the structure, I will do it. But it's gonna be a lot of work.
 
+-- | 'Column' stores a column in a table as a list of its values along with the datatype and name of column
 data Column = Column {
     cName :: String,
     cDatatype :: Datatype, -- For Num => Num, String => String, Bool => Bool
     cValues :: [String]
 } deriving (Show, Eq)
 
--- Returns new column with name, datatype and values
+-- |'newColumn' Returns new column (Maybe Column)
+-- First argument is name of column
+-- Second argument is datatype
+-- Third argument is list of values
 newColumn :: String -> Datatype -> [String] -> Maybe Column
 newColumn name datatype values = Just Column {
     cName = name,
@@ -93,49 +102,64 @@ newColumn name datatype values = Just Column {
     cValues = values
 }
 
+-- | 'Table' stores a map of columns (key is column Name) with table name and list of names of columns
 data Table = Table {
     tName :: String,
     tColNameList :: [String],
     tColumns :: Data.Map.Map String Column
 } deriving (Show, Eq)
 
--- Returns new table with name and columns
+-- | 'newTable' returns new table (Maybe Table)
+-- First argument is table name
+-- Second argument is (list of colNames, Map of those colnames -> Columns)
 newTable :: String -> ([String], Data.Map.Map String Column) -> Maybe Table
 newTable name (colNameList, columns) = Just Table {
     tName = name,
     tColNameList = colNameList,
     tColumns = columns
 }
-    
+
+-- | 'Database' stores a database with a name and map of tables indexed by their names
 data Database = Database {
     dName :: String,
     dTables :: Data.Map.Map String Table
 } deriving (Show, Eq)
 
--- Returns new database with name and tables
+-- | 'newDatabase' returns new database (Maybe Database)
+-- First argument is datbase name
+-- Second argument map of tables indexed by their names
 newDatabase :: String -> Data.Map.Map String Table -> Maybe Database
 newDatabase name tables = Just Database {
     dName = name,
     dTables = tables
 }
 
--- For datatype in a column
+-- | 'Datatype' is for datatype in a column
 data Datatype = INT | STRING | BOOL deriving (Show, Eq)
 
--- True if database contains table named tableName
+-- | 'containsTable' is True if database contains table, o/w False
+-- First argument is tableName
+-- Second argument is database object (Maybe database)
 containsTable :: String -> Maybe Database -> Bool
 containsTable tableName database = not (isNothing $ getTable tableName database)
 
--- True if database -> tableName contains a column named columnName
+-- | 'containsColumn' returns True if table within database contains a column, o/w false
+-- First argument is column name
+-- Second argument is database (Maybe Database)
+-- Third argument is table name
 containsColumn :: String -> Maybe Database -> String -> Bool
 containsColumn columnName database tableName = elem columnName (tColNameList $ fromJust $ getTable tableName database)
 
--- Returns table from database with name tableName
+-- | 'getTable' returns table from database (Maybe Table)
+-- First argument is table name
+-- Second argument is database (Maybe Database)
 getTable :: String -> Maybe Database -> Maybe Table
 getTable tableName database
     | isNothing database = Nothing
     | otherwise = Data.Map.lookup tableName $ dTables $ fromJust database
 
+-- | 'count' returns the number of entries in a table
+-- First argument is table (Maybe Table)
 count :: Maybe Table -> Int
 count table
     | isNothing table || Data.Map.size (tColumns $ fromJust table) == 0 = 0
@@ -143,13 +167,17 @@ count table
         in length (cValues firstCol)
 
 
--- Returns column with columnName in database -> tableName
+-- | 'getColumn' returns column in specific table of a database (Maybe Column)
+-- First argument is name of column (String)
+-- Second argument is table (Maybe Table)
 getColumn :: String -> Maybe Table -> Maybe Column
 getColumn columnName table
     | isNothing table = Nothing
     | otherwise = Data.Map.lookup columnName (tColumns $ fromJust table)
 
--- Adds a table to database with tableName
+-- | 'addNewTable' adds an empty table to database and returns new database (Maybe Database)
+-- First argument is tableName (String)
+-- Second argument is database (Maybe Database)
 addNewTable :: String -> Maybe Database -> Maybe Database
 addNewTable tableName database
     | isNothing database = Nothing
@@ -158,19 +186,31 @@ addNewTable tableName database
         dTables = Data.Map.insert tableName (fromJust $ newTable tableName ([],Data.Map.empty)) (dTables $ fromJust database)
     }
 
--- Adds column to table object with name and datatype
+-- | 'addColumnToTable' adds a column to a table and returns new table (Table)
+-- First argument is column name (String)
+-- Second argument is column datatype (Datatype)
+-- Third argumenr is old table (Table)
 addColumnToTable :: String -> Datatype -> Table -> Table
 addColumnToTable columnName datatype table = fromJust $ newTable (tName table)
         ((tColNameList table) ++ [columnName], (Data.Map.insert columnName (fromJust $ newColumn columnName datatype []) (tColumns table)))
 
--- Adds a column to database -> tableName with name=columnName, datatype=datatype
+-- | 'addColumn' adds a column to specific table in database and returns new database (Maybe Database)
+-- First argument is column name (String)
+-- Second argumenr is column datatype (Datatype)
+-- Third argumenr is database (Maybe Database)
+-- Fourth argumenr is table name (String)
 addColumn :: String -> Datatype -> Maybe Database -> String -> Maybe Database
 addColumn columnName datatype database tableName
-    | isNothing database || not (containsTable tableName database) = Nothing
+    | isNothing database || not (containsTable tableName database) = database
     | otherwise = newDatabase (dName $ fromJust database)
             (Data.Map.adjust (addColumnToTable columnName datatype) tableName $ dTables $ fromJust database)
 
--- Input value and datatype to be inserted in a single column
+-- | 'insertOne' inserts one entry in one column of one table in a database
+-- First argument is value (String)
+-- Second argument is it's datatype (Datatype)
+-- Third argument is old database (Maybe Database)
+-- Fourth argument is table name (String)
+-- Fifth argumenr is column name (String)
 insertOne :: String -> Datatype -> Maybe Database -> String -> String -> Maybe Database
 insertOne value datatype database tableName columnName
     | isNothing database || not (containsTable tableName database) || not (containsColumn columnName database tableName)
@@ -180,6 +220,11 @@ insertOne value datatype database tableName columnName
     where f = (\table -> fromJust $ newTable (tName table) (tColNameList table, (Data.Map.adjust g columnName $ tColumns table)))
           g = (\column -> fromJust $ newColumn (cName column) (cDatatype column) ((cValues column) ++ [value]))
 
+
+-- | 'isValidDatatype' checks if datatypes corresponding to column names list are in sync with the table in database or not. Returns true if they both conform
+-- First argumenr is table (Maybe Table)
+-- Second argument is list of column names [String]
+-- Third argument is list of datatypes [Datatype]
 isValidDatatype :: Maybe Table -> [String] -> [Datatype] -> Bool
 isValidDatatype t colList typeList
     | isNothing t || (colList == [] && typeList == [] )= True
@@ -190,7 +235,12 @@ isValidDatatype t colList typeList
         in (dType == cDatatype (fromJust $ getColumn col t)) && (isValidDatatype t cols dTypes)
           
 
--- Input - list of colNames <-> corresponding list of values <-> corresponding list of datatypes
+-- | 'insert' inserts an entry (row) in database -> table and returns new database
+-- First argumenr is list of colNames [String]
+-- Second argument is corresponding list of values [String]
+-- Third argumenr is corresponding list of datatypes [Datatype]
+-- Fourth argument old database (Maybe Database)
+-- Fifth argument is table name (String)
 insert :: [String] -> [String] -> [Datatype] -> Maybe Database -> String -> Maybe Database
 insert columnNames values datatypes db tableName 
     | length values /= length datatypes || not (isValidDatatype (getTable tableName db) columnNames datatypes) || length columnNames /= length values = db --Mismatch in length of names, values and datatypes
@@ -202,6 +252,11 @@ insert columnNames values datatypes db tableName
         let new_db = insertOne v d db tableName col
         insert cols vs ds new_db tableName
 
+
+-- | 'insertDefault' inserts an entry in the default column order. This does not check for datatype as of now.
+-- First argument is list of values
+-- Second argument is old database
+-- Third argument is tableName
 insertDefault :: [String] -> Maybe Database -> String -> Maybe Database
 insertDefault values db tableName
     -- | not datatypeOK colNameList values table = db
@@ -210,21 +265,26 @@ insertDefault values db tableName
         in insert colNameList values (map (\name -> cDatatype $ fromJust $ getColumn name table) colNameList) db tableName
     where table = getTable tableName db
           colNameList = if isNothing table then [] else tColNameList $ fromJust table
--- Utility functions for find*
+
+-- | 'getColList' is a Utility function for find*
 getColList table db= Data.Map.elems (tColumns $ fromJust $ getTable table db)
 
--- Finds entry at index in table and returns as [tuples] where tuple = (col name, col type, col value)
+-- | 'findEntryAtIndex' finds entry at index in table and returns as [tuples] where tuple = (col name, col type, col value)
+-- First argument is tableName
+-- Second argument is database
+-- Third argument is index
 findEntryAtIndex :: String -> Maybe Database -> Int -> [(String, Datatype, String)]
 findEntryAtIndex tableName db index = [ cell | col <- getColList tableName db,
     let cell = (cName col, cDatatype col, (cValues col) !! index)]
 
+-- 'litValue' is a utility function to support evaluation of ValueExpr on columns (which are stored as String)
 litValue :: String -> Datatype -> Exp.ValueExpr
 litValue value datatype
     | datatype == INT = Exp.NumLit (read value :: Integer)
     | datatype == BOOL = if value == "True" then Exp.BoolLit True else Exp.BoolLit False
     | datatype == STRING = Exp.StringLit value
 
--- Finds all entries in (db -> table) with value, datype and returns as [entries] where entry=[tuples] where tuple = (col name, col type, col value)
+-- Fsinds all entries in (db -> table) with value, datype and returns as [entries] where entry=[tuples] where tuple = (col name, col type, col value)
 find :: Either Text.Parsec.Error.ParseError Exp.ValueExpr -> Maybe Database -> String -> [[(String, Datatype, String)]]
 find (Right condition) db tableName
     | otherwise =
@@ -247,3 +307,16 @@ deleteEntryAtIndex index db tableName
     where f = \table -> (fromJust $ newTable (tName table) (tColNameList table, (Data.Map.fromList new_cols)))
           cols = Data.Map.elems $ tColumns $ fromJust $ getTable tableName db
           new_cols = [(cName col, fromJust $ newColumn (cName col) (cDatatype col) (deleteFromList index $ cValues col)) | col <- cols]
+
+orderBy :: Either Text.Parsec.Error.ParseError Exp.ValueExpr -> [[(String, Datatype, String)]] -> [[(String, Datatype, String)]]
+orderBy (Right condition) entryList
+    | length entryList == 0 = []
+    | otherwise =
+        sortBy (\entry1 entry2-> 
+            let map1 = Data.Map.fromList [(colName, litValue (value) colDatatype) | (colName, colDatatype, value) <- entry1]
+                map2 = Data.Map.fromList [(colName, litValue (value) colDatatype) | (colName, colDatatype, value) <- entry2]
+                val1 = Exp.evaluateExpr map1 condition
+                val2 = Exp.evaluateExpr map2 condition
+            in if val1 > val2 then GT else if val1 < val2 then LT else EQ) entryList
+        -- in if Exp.evaluateExpr2 map condition then entry:(orderBy (Right condition) entries) else orderBy (Right condition) entries
+
