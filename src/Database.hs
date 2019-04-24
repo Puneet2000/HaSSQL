@@ -284,7 +284,10 @@ litValue value datatype
     | datatype == BOOL = if value == "True" then Exp.BoolLit True else Exp.BoolLit False
     | datatype == STRING = Exp.StringLit value
 
--- Fsinds all entries in (db -> table) with value, datype and returns as [entries] where entry=[tuples] where tuple = (col name, col type, col value)
+-- | 'find' finds all entries in (db -> table) with value, datype and returns as [entries] where entry=[tuples] where tuple = (col name, col type, col value)
+-- First argument is value (Right) ValueExpr that evaluates to true or false
+-- Second argument is database (Maybe Database)
+-- Third argument is table name
 find :: Either Text.Parsec.Error.ParseError Exp.ValueExpr -> Maybe Database -> String -> [[(String, Datatype, String)]]
 find (Right condition) db tableName
     | otherwise =
@@ -294,10 +297,14 @@ find (Right condition) db tableName
             indices = [n | n <- [0..nEntries-1], let map = Data.Map.fromList [(colName, value) | col <- columns, let colName = cName col, let value = litValue ((cValues col) !! n) (cDatatype col)], Exp.evaluateExpr2 map condition]
         in [findEntryAtIndex tableName db n | n <- indices]
 
+-- | 'deleteFromList' is a utility function to delete an entry from a list
 deleteFromList :: Int -> [String] -> [String]
 deleteFromList index xs = (take index xs) ++ reverse(take (length xs - index - 1) (reverse xs))
 
--- Delete an entry from the table
+-- | 'deleteEntryAtIndex' deletes an entry from the table
+-- First argument is the index in table for the entry to be deleted
+-- Second argument is the database (Maybe Database)
+-- Third argument is table name
 deleteEntryAtIndex :: Int -> Maybe Database -> String -> Maybe Database
 deleteEntryAtIndex index db tableName
     | isNothing db = Nothing
@@ -308,6 +315,9 @@ deleteEntryAtIndex index db tableName
           cols = Data.Map.elems $ tColumns $ fromJust $ getTable tableName db
           new_cols = [(cName col, fromJust $ newColumn (cName col) (cDatatype col) (deleteFromList index $ cValues col)) | col <- cols]
 
+-- | 'orderBy' orders the entries given by find based on the value given by expression
+-- First argument is the expression that gives the deciding value
+-- Second argument is the entrylist returned by find
 orderBy :: Either Text.Parsec.Error.ParseError Exp.ValueExpr -> [[(String, Datatype, String)]] -> [[(String, Datatype, String)]]
 orderBy (Right condition) entryList
     | length entryList == 0 = []
@@ -318,5 +328,4 @@ orderBy (Right condition) entryList
                 val1 = Exp.evaluateExpr map1 condition
                 val2 = Exp.evaluateExpr map2 condition
             in if val1 > val2 then GT else if val1 < val2 then LT else EQ) entryList
-        -- in if Exp.evaluateExpr2 map condition then entry:(orderBy (Right condition) entries) else orderBy (Right condition) entries
 
