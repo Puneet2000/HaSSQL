@@ -23,7 +23,7 @@ main = do
     let mdb7 = evaluateInsert (regularParse insertExpr "insert into table1 values (5,'POPL',True)") mdb6
     let mdb8 = evaluateInsert (regularParse insertExpr "insert into table1 values (7,'Project',True)") mdb7
     --print(mdb4)
-    let sel =  regularParse queryExpr "select c1,c2 from table1 where c3 order by -c1"
+    let sel =  regularParse queryExpr "select * from table1"
     let out = evaluateQuery sel mdb8
     print(out)
 

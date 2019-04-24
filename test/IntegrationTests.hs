@@ -114,6 +114,20 @@ integrationQueryTests = [("select c1,c2 from table1 order by -c1",
                             ,[("c1",INT,"1"),("c2",STRING,"Puneet")]
                             ,[("c1",INT,"1"),("c2",STRING,"Sai ramana")]]
                             )
+                         ,("select * from table1 where c3 order by c1",
+                           [[("c1",INT,"1"),("c2",STRING,"Puneet"),("c3",BOOL,"True")]
+                           ,[("c1",INT,"1"),("c2",STRING,"Sai ramana"),("c3",BOOL,"True")]
+                           ,[("c1",INT,"5"),("c2",STRING,"POPL"),("c3",BOOL,"True")]
+                           ,[("c1",INT,"7"),("c2",STRING,"Project"),("c3",BOOL,"True")]]
+                          )
+                         ,("select * from table1",
+                           [[("c1",INT,"1"),("c2",STRING,"Puneet"),("c3",BOOL,"True")]
+                           ,[("c1",INT,"11"),("c2",STRING,"Shraiysh"),("c3",BOOL,"False")]
+                           ,[("c1",INT,"1"),("c2",STRING,"Sai ramana"),("c3",BOOL,"True")]
+                           ,[("c1",INT,"2"),("c2",STRING,"Hitesh"),("c3",BOOL,"False")]
+                           ,[("c1",INT,"5"),("c2",STRING,"POPL"),("c3",BOOL,"True")]
+                           ,[("c1",INT,"7"),("c2",STRING,"Project"),("c3",BOOL,"True")]]
+                          )
                          ]
 
 

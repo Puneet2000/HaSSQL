@@ -101,6 +101,7 @@ evalOrderBy (x : xs) out = evalOrderBy xs (orderBy (Right x) out)
 -- |'evalSelect' converts select lists to String tuples
 -- First argument is parsed select list
 evalSelect :: [(ValueExpr, Maybe String)] -> [(String,String)]
+evalSelect [(Star,Nothing)] = []
 evalSelect [] = []
 evalSelect (x : xs) = do
   case (snd x) of
