@@ -223,7 +223,7 @@ testInputList = [
 
 testOrderBy :: H.Test
 testOrderBy =
-    let expr = F.parseWithWSEof (Exp.valueExpr []) "a*a"    -- ExpressionParser error with `(a*a) - (b*b)`???
+    let expr = F.parseWithWSEof (Exp.valueExpr []) "(a*a) - (b*b)" 
         input = testInputList
         output = DB.orderBy expr input
         expOutput = [

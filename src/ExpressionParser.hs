@@ -123,6 +123,7 @@ evaluateExpr map (BinOp v1 "*" v2) = (evaluateExpr map v1)*(evaluateExpr map v2)
 evaluateExpr map (BinOp v1 "/" v2) = div (evaluateExpr map v1) (evaluateExpr map v2)
 evaluateExpr map (BinOp v1 "%" v2) = mod (evaluateExpr map v1) (evaluateExpr map v2)
 evaluateExpr map (BinOp v1 "+" v2) = (evaluateExpr map v1) + (evaluateExpr map v2)
+evaluateExpr map (BinOp v1 "-" v2) = (evaluateExpr map v1) - (evaluateExpr map v2)
 
 -- |'evaluateExpr2' evaluates a 'ValueExpr' to Bool if possible otherwise Exception
 -- First argument is map of variables and corresponding values.
