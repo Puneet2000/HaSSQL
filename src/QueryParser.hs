@@ -22,6 +22,7 @@ import ExpressionParser
 -- |'QueryExpr' represents a SELECT statement
 data QueryExpr = Select
       {qeSelectList :: [(ValueExpr,Maybe String)] -- ^ 'qeSelectList' contains list of selected columns
+      ,qefromClause :: ValueExpr
       ,qeWhere :: Maybe ValueExpr  -- ^ 'qeWhere' contains where clause expression
       ,qeGroupBy :: [ValueExpr] -- ^ 'qeGroupBy' contains list of groupby expresions
       ,qeHaving :: Maybe ValueExpr  -- ^ 'qeHaving' contains havingby expression
@@ -31,6 +32,7 @@ data QueryExpr = Select
 -- |'makeSelect' makes a empty 'QueryExpr' object
 makeSelect :: QueryExpr
 makeSelect = Select {qeSelectList = []
+                    ,qefromClause = Iden ""
                     ,qeWhere = Nothing
                     ,qeGroupBy = []
                     ,qeHaving = Nothing
@@ -45,6 +47,9 @@ selectItem :: Parser (ValueExpr, Maybe String)
 selectItem = (,) <$> valueExpr [] <*> optionMaybe (try alias)
   where alias = optional (keyword_ "as") *> identifierBlacklist ["from","where","group","having","order"]
 
+
+fromClause :: Parser ValueExpr
+fromClause = keyword_ "from" *> iden ["from","where","group","having","order"]
 -- |'whereClause' parses where clause
 whereClause :: Parser ValueExpr
 whereClause = keyword_ "where" *> valueExpr []
@@ -67,6 +72,7 @@ orderBy = keyword_ "order" *> keyword_ "by"
 queryExpr :: Parser QueryExpr
 queryExpr = Select
             <$> selectList
+            <*> fromClause
             <*> optionMaybe whereClause
             <*> option [] groupByClause
             <*> optionMaybe having
