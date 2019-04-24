@@ -59,56 +59,64 @@ basicTests = numLitTests ++ idenTests ++ operatorTests ++ parensTests ++ stringL
 
 singleSelectItemTests :: [(String,QueryExpr)]
 singleSelectItemTests =
-    [("select 1", makeSelect {qeSelectList = [(NumLit 1,Nothing)]})]
+    [("select 1 from table1", makeSelect {qeSelectList = [(NumLit 1,Nothing)]
+                                          ,qefromClause = Iden "table1"})]
 
 multipleSelectItemsTests :: [(String,QueryExpr)]
 multipleSelectItemsTests =
-    [("select a"
-     ,makeSelect {qeSelectList = [(Iden "a",Nothing)]})
-    ,("select a,b"
-     ,makeSelect {qeSelectList = [(Iden "a",Nothing)
-                                 ,(Iden "b",Nothing)]})
-    ,("select 1+2,3+4"
+    [("select a from table1"
+     ,makeSelect {qeSelectList = [(Iden "a",Nothing)]
+                ,qefromClause = Iden "table1"})
+    ,("select a,b from table1"
+     ,makeSelect {qeSelectList = [(Iden "a",Nothing),(Iden "b",Nothing)]
+                  ,qefromClause = Iden "table1"})
+    ,("select 1+2,3+4 from table1"
      ,makeSelect {qeSelectList =
                      [(BinOp (NumLit 1) "+" (NumLit 2),Nothing)
-                     ,(BinOp (NumLit 3) "+" (NumLit 4),Nothing)]})
+                     ,(BinOp (NumLit 3) "+" (NumLit 4),Nothing)]
+                     , qefromClause = Iden "table1"})
     ]
 
 selectListTests :: [(String,QueryExpr)]
 selectListTests =
-    [("select a as a, b as b"
+    [("select a as a, b as b from table1"
      ,makeSelect {qeSelectList = [(Iden "a", Just "a")
-                                 ,(Iden "b", Just "b")]})
-    ,("select a a, b b"
+                                 ,(Iden "b", Just "b")]
+                                 , qefromClause = Iden "table1"})
+    ,("select a a, b b from table1"
      ,makeSelect {qeSelectList = [(Iden "a", Just "a")
-                                 ,(Iden "b", Just "b")]})
+                                 ,(Iden "b", Just "b")]
+                                 ,qefromClause = Iden "table1"})
     ] ++ multipleSelectItemsTests
       ++ singleSelectItemTests
-
 whereTests :: [(String,QueryExpr)]
 whereTests =
-    [("select a where a = 5"
+    [("select a from table1 where a = 5"
      ,makeSelect {qeSelectList = [(Iden "a",Nothing)]
+                 ,qefromClause = Iden "table1"
                  ,qeWhere = Just $ BinOp (Iden "a") "=" (NumLit 5)})
-    ,("select * where a = 5"
+    ,("select * from table1 where a = 5"
      ,makeSelect {qeSelectList = [(Star,Nothing)]
+                 ,qefromClause = Iden "table1"
                  ,qeWhere = Just $ BinOp (Iden "a") "=" (NumLit 5)})
     ]
 
 groupByTests :: [(String,QueryExpr)]
 groupByTests =
-    [("select a,b group by a"
+    [("select a,b from table1 group by a"
      ,makeSelect {qeSelectList = [(Iden "a",Nothing)
                                  ,(Iden "b",Nothing)]
+                 ,qefromClause = Iden "table1"
                  ,qeGroupBy = [Iden "a"]
                  })
     ]
 
 havingTests :: [(String,QueryExpr)]
 havingTests =
-  [("select a,b group by a having b > 5"
+  [("select a,b from table1 group by a having b > 5"
      ,makeSelect {qeSelectList = [(Iden "a",Nothing)
                                  ,(Iden "b",Nothing)]
+                 ,qefromClause = Iden "table1"
                  ,qeGroupBy = [Iden "a"]
                  ,qeHaving = Just $ BinOp (Iden "b") ">" (NumLit 5)
                  })
@@ -117,13 +125,14 @@ havingTests =
 
 orderByTests :: [(String,QueryExpr)]
 orderByTests =
-    [("select a order by a"
+    [("select a from table1 order by a"
      ,ms [Iden "a"])
-    ,("select a order by a, b"
+    ,("select a from table1 order by a, b"
      ,ms [Iden "a", Iden "b"])
     ]
   where
     ms o = makeSelect {qeSelectList = [(Iden "a",Nothing)]
+                      ,qefromClause = Iden "table1"
                       ,qeOrderBy = o}
 
 allQueryExprTests :: [(String,QueryExpr)]
