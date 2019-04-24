@@ -2,7 +2,8 @@ module Database where
 
 import qualified Data.Map
 import Data.Maybe (fromJust, isNothing)
-import Data.List (elemIndex, elemIndices, sortBy)
+import Data.List (elemIndex, elemIndices)
+import Data.Sort(sortBy)
 -- import Data.List.Key (sort)
 import qualified ExpressionParser as Exp
 import qualified Text.Parsec.Error
