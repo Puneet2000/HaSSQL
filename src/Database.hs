@@ -44,27 +44,27 @@ sampleCommands = do
 
     let my_db_1 = insert ["Name", "Phone_number", "BoolCol"] ["Martha", "12345", "False"] [STRING, INT, BOOL] my_db "table 1"
     -- print my_db_1
-    print(my_db_1)
+    -- print(my_db_1)
     let my_db = my_db_1
     let my_db_1 = insert ["BoolCol", "Name", "Phone_number"] ["True", "Stewart", "78910"] [BOOL, STRING, INT] my_db "table 1"
-    print(my_db_1)
+    -- print(my_db_1)
 
     let m = F.parseWithWSEof (Exp.valueExpr []) "BoolCol"
     let n = F.parseWithWSEof (Exp.valueExpr []) "Phone_number > 0"
     let o = F.parseWithWSEof (Exp.valueExpr []) "Phone_number = 12345"
     let p = F.parseWithWSEof (Exp.valueExpr []) "-1 * Phone_number"
-    print m
-    let x = find m my_db_1 "table 1"
-    print x
-    print n
-    let x = find n my_db_1 "table 1"
-    print x
+    -- print m
+    let x = delete n my_db_1 "table 1"
     print("Y=-------------------->")
-    let y = select [("BoolCol", "IsFemale"), ("Phone_number", "home_number")] $ orderBy p x
-    print y
-    print o
-    let x = find o my_db_1 "table 1"
     print x
+    -- print n
+    let x = find n my_db_1 "table 1"
+    -- print x
+    let y = select [("BoolCol", "IsFemale"), ("Phone_number", "home_number")] $ orderBy p x
+    -- print y
+    -- print o
+    let x = find o my_db_1 "table 1"
+    -- print x
 
     -- print my_db_1
 
@@ -290,6 +290,7 @@ litValue value datatype
 -- Third argument is table name
 find :: Either Text.Parsec.Error.ParseError Exp.ValueExpr -> Maybe Database -> String -> [[(String, Datatype, String)]]
 find (Right condition) db tableName
+    | isNothing db || not (containsTable tableName db) = []
     | otherwise =
         let table = getTable tableName db
             nEntries = count table
@@ -315,18 +316,36 @@ deleteEntryAtIndex index db tableName
           cols = Data.Map.elems $ tColumns $ fromJust $ getTable tableName db
           new_cols = [(cName col, fromJust $ newColumn (cName col) (cDatatype col) (deleteFromList index $ cValues col)) | col <- cols]
 
+deleteEntryAtIndices :: [Int] -> Maybe Database -> String -> Maybe Database
+deleteEntryAtIndices indexList db tableName
+    | isNothing db || indexList == [] || not (containsTable tableName db) = db
+    | otherwise =
+        let (index:indices) = indexList
+            newDB = deleteEntryAtIndex index db tableName
+        in deleteEntryAtIndices [index-1 | index <- indices] newDB tableName
+
+delete :: Either Text.Parsec.Error.ParseError Exp.ValueExpr -> Maybe Database -> String -> Maybe Database
+delete (Right condition) db tableName
+    | isNothing db || not (containsTable tableName db) = db
+    | otherwise =
+        let table = getTable tableName db
+            nEntries = count table
+            columns = Data.Map.elems $ tColumns $ fromJust table 
+            indices = [n | n <- [0..nEntries-1], let map = Data.Map.fromList [(colName, value) | col <- columns, let colName = cName col, let value = litValue ((cValues col) !! n) (cDatatype col)], Exp.evaluateExpr2 map condition]
+        in deleteEntryAtIndices indices db tableName
+
 -- | 'orderBy' orders the entries given by find based on the value given by expression
 -- First argument is the expression that gives the deciding value
 -- Second argument is the entrylist returned by find / select
 orderBy :: Either Text.Parsec.Error.ParseError Exp.ValueExpr -> [[(String, Datatype, String)]] -> [[(String, Datatype, String)]]
-orderBy (Right condition) entryList
+orderBy (Right expr) entryList
     | length entryList == 0 = []
     | otherwise =
         sortBy (\entry1 entry2-> 
             let map1 = Data.Map.fromList [(colName, litValue (value) colDatatype) | (colName, colDatatype, value) <- entry1]
                 map2 = Data.Map.fromList [(colName, litValue (value) colDatatype) | (colName, colDatatype, value) <- entry2]
-                val1 = Exp.evaluateExpr map1 condition
-                val2 = Exp.evaluateExpr map2 condition
+                val1 = Exp.evaluateExpr map1 expr
+                val2 = Exp.evaluateExpr map2 expr
             in if val1 > val2 then GT else if val1 < val2 then LT else EQ) entryList
 
 -- | 'select' selects specific columns from the output of find/orderBy and returns list of entries with those columns only

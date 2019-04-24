@@ -1,6 +1,8 @@
 module DatabaseTests where
 import Test.HUnit as H
 import qualified Database as DB
+import qualified ExpressionParser as Exp
+import qualified Funcs as F
 import Data.Maybe(fromJust)
 import qualified Data.Map as M
 import Data.List (elem)
@@ -21,18 +23,29 @@ databaseTests = do
             H.TestLabel "addNewTable" testAddNewTable,
             H.TestLabel "addColumnToTable" testAddColumnToTable,
             H.TestLabel "addColumn" testAddColumn]
-    -- let findTests = H.TestList [
-    --         H.TestLabel "find" testFind]
+    let findTests = H.TestList [
+            H.TestLabel "find1" testFind,
+            H.TestLabel "find2" testFind2]
     let insertTests = H.TestList [
-            H.TestLabel "insertOne" testInsertOne]
-            --H.TestLabel "insert" testInsert
+            H.TestLabel "insertOne" testInsertOne,
+            H.TestLabel "insert" testInsert,
+            H.TestLabel "insertDefault" testInsertDefault]
+    let deleteTests = H.TestList[
+            H.TestLabel "delete" testDelete]
+    let orderByTests = H.TestList[
+            H.TestLabel "orderBy" testOrderBy]
+    let selectTests = H.TestList[
+            H.TestLabel "select" testSelect]
 
     runTestTT newTests
     runTestTT containsTests
     runTestTT getTests
     runTestTT addTests
-    -- runTestTT findTests
+    runTestTT findTests
     runTestTT insertTests
+    runTestTT deleteTests
+    runTestTT orderByTests
+    runTestTT selectTests
 
 testNewColumn :: H.Test
 testNewColumn =
@@ -150,25 +163,88 @@ testInsertOne =
         H.assertEqual "Length did not increase by one on insertOne" (prevLength + 1) newLength
     )
 
--- TODO : testFind with ExpressionParser.valueExpr as argument
--- testFind :: H.Test
--- testFind =
---     let condition = (\value -> (let intValue = read value :: Integer in if intValue > 0 then True else False))
---         foundVals = DB.find condition sampleDB "sampleTableOne" "sampleIntCol"
---         expectedVals = [
---             [("sampleIntCol", DB.INT, "987"), ("sampleStringCol", DB.STRING, "testVal2s")],
---             [("sampleIntCol", DB.INT, "123"), ("sampleStringCol", DB.STRING, "testVal1s")]]
---     in H.TestCase (do
---         H.assertBool "find does not work properly" (all (\val -> elem val expectedVals ) foundVals)
---     )
+testFind :: H.Test
+testFind =
+    let condition = F.parseWithWSEof (Exp.valueExpr []) "sampleIntCol > 200"
+        foundVals = DB.find condition sampleDB "sampleTableOne"
+        expectedVals = [
+            [("sampleIntCol", DB.INT, "987"), ("sampleStringCol", DB.STRING, "testVal2s")]]
+        in H.TestCase (do
+            H.assertBool "find does not work properly" (all (\val -> elem val expectedVals) foundVals)
+        )
 
--- TODO : testInsert with new find!
--- testInsert :: H.Test
--- testInsert = 
---     let myNewDB = DB.insert ["sampleIntCol", "sampleStringCol"] ["99", "newString"] [DB.INT, DB.STRING] sampleDB "sampleTableOne"
---         search99 = DB.find (\val -> val == "99") myNewDB "sampleTableOne" "sampleIntCol"
---         expected99 = [
---             [("sampleIntCol", DB.INT, "99"), ("sampleStringCol", DB.STRING, "newString")]]
---     in H.TestCase (do
---         H.assertBool "insert is not working properly!" (all (\val -> elem val expected99) search99)
---     )
+testFind2 :: H.Test
+testFind2 =
+    let condition = F.parseWithWSEof (Exp.valueExpr []) "sampleIntCol > 0"
+        foundVals = DB.find condition sampleDB "sampleTableOne"
+        expectedVals = [
+            [("sampleIntCol", DB.INT, "987"), ("sampleStringCol", DB.STRING, "testVal2s")],
+            [("sampleIntCol", DB.INT, "123"), ("sampleStringCol", DB.STRING, "testVal1s")]]
+    in H.TestCase (do
+        H.assertBool "find does not work properly" (all (\val -> elem val expectedVals ) foundVals)
+    )
+
+testInsert :: H.Test
+testInsert =
+    let myNewDB = DB.insert ["sampleIntCol", "sampleStringCol"] ["99", "newString"] [DB.INT, DB.STRING] sampleDB "sampleTableOne"
+        condition = F.parseWithWSEof (Exp.valueExpr []) "sampleIntCol = 99"
+        search99 = DB.find condition myNewDB "sampleTableOne"
+        expected99 = [
+            [("sampleIntCol", DB.INT, "99"), ("sampleStringCol", DB.STRING, "newString")]]
+    in H.TestCase (do
+        H.assertBool "insert is not working properly!" (all (\val -> elem val expected99) search99)
+    )
+
+testInsertDefault :: H.Test
+testInsertDefault =
+    let myNewDB = DB.insertDefault ["99", "newString"] sampleDB "sampleTableOne"
+        condition = F.parseWithWSEof (Exp.valueExpr []) "sampleIntCol = 99"
+        search99 = DB.find condition myNewDB "sampleTableOne"
+        expected99 = [
+            [("sampleIntCol", DB.INT, "99"), ("sampleStringCol", DB.STRING, "newString")]]
+    in H.TestCase (do
+        H.assertBool "insert is not working properly!" (all (\val -> elem val expected99) search99)
+    )
+
+testDelete :: H.Test
+testDelete = 
+    let strConditions = ["sampleIntCol = 99", "sampleIntCol > 200", "sampleIntCol > 0"]
+        conditions = [F.parseWithWSEof (Exp.valueExpr []) condition | condition <- strConditions]
+        myNewDBs = [DB.delete condition sampleDB "sampleTableOne" | condition <- conditions]
+        finds = [DB.find condition myNewDB "sampleTableOne" | n <- [0..length strConditions-1], let condition = conditions !! n, let myNewDB = myNewDBs !! n]
+    in H.TestCase(
+        H.assertBool "delete does not work properly" (all (\finds -> finds == []) finds)
+    )
+
+testInputList = [
+    [("a", DB.INT, "1"), ("b", DB.INT, "3"), ("c", DB.INT, "2")],
+    [("a", DB.INT, "3"), ("b", DB.INT, "2"), ("c", DB.INT, "3")],
+    [("a", DB.INT, "2"), ("b", DB.INT, "2"), ("c", DB.INT, "2")]]
+
+testOrderBy :: H.Test
+testOrderBy =
+    let expr = F.parseWithWSEof (Exp.valueExpr []) "a*a"    -- ExpressionParser error with `(a*a) - (b*b)`???
+        input = testInputList
+        output = DB.orderBy expr input
+        expOutput = [
+            [("a", DB.INT, "1"), ("b", DB.INT, "3"), ("c", DB.INT, "2")],
+            [("a", DB.INT, "2"), ("b", DB.INT, "2"), ("c", DB.INT, "2")],
+            [("a", DB.INT, "3"), ("b", DB.INT, "2"), ("c", DB.INT, "3")]]
+    in H.TestCase (do
+        H.assertBool "orderBy does not work properly" (all (\i -> output !! i == expOutput !! i) [0..length output-1])
+    )
+
+testSelect :: H.Test
+testSelect =
+    let input = testInputList
+        output1 = DB.select [("a", "Testa"), ("c", "Testc")] input
+        output2 = DB.select [] input
+        exp1 = [
+            [("Testa", DB.INT, "1"), ("Testc", DB.INT, "2")],
+            [("Testa", DB.INT, "3"), ("Testc", DB.INT, "3")],
+            [("Testa", DB.INT, "2"), ("Testc", DB.INT, "2")]]
+        exp2 = testInputList
+    in H.TestCase (do
+        H.assertBool "select does not work properly" (all (\val -> elem val exp1) output1)
+        H.assertBool "select does not handle empty case properly" (all (\val -> elem val exp2) output2)
+    )
