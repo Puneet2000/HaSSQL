@@ -60,7 +60,7 @@ sampleCommands = do
     let x = find n my_db_1 "table 1"
     print x
     print("Y=-------------------->")
-    let y = orderBy p x
+    let y = select [("BoolCol", "IsFemale"), ("Phone_number", "home_number")] $ orderBy p x
     print y
     print o
     let x = find o my_db_1 "table 1"
@@ -317,7 +317,7 @@ deleteEntryAtIndex index db tableName
 
 -- | 'orderBy' orders the entries given by find based on the value given by expression
 -- First argument is the expression that gives the deciding value
--- Second argument is the entrylist returned by find
+-- Second argument is the entrylist returned by find / select
 orderBy :: Either Text.Parsec.Error.ParseError Exp.ValueExpr -> [[(String, Datatype, String)]] -> [[(String, Datatype, String)]]
 orderBy (Right condition) entryList
     | length entryList == 0 = []
@@ -329,3 +329,14 @@ orderBy (Right condition) entryList
                 val2 = Exp.evaluateExpr map2 condition
             in if val1 > val2 then GT else if val1 < val2 then LT else EQ) entryList
 
+-- | 'select' selects specific columns from the output of find/orderBy and returns list of entries with those columns only
+-- First argument is column alias (if new name of the columns is needed, then this is used)
+-- Second argument is output of find/orderBy
+select :: [(String, String)] -> [[(String, Datatype, String)]] -> [[(String, Datatype, String)]]
+select colAlias entryList
+    | length entryList == 0 = []
+    | length colAlias == 0 = entryList
+    | otherwise =
+        let alias = Data.Map.fromList colAlias
+        in [newEntry | entry <- entryList, 
+            let newEntry = [(fromJust newName, datatype, value) | (name, datatype, value) <- entry, let newName = Data.Map.lookup name alias, not (isNothing newName)]]
