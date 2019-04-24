@@ -330,7 +330,7 @@ orderBy (Right condition) entryList
             in if val1 > val2 then GT else if val1 < val2 then LT else EQ) entryList
 
 -- | 'select' selects specific columns from the output of find/orderBy and returns list of entries with those columns only
--- First argument is column alias (if new name of the columns is needed, then this is used)
+-- First argument is column alias (if new name of the columns is needed, then this is used). If this is empty, all columns with default names are returned
 -- Second argument is output of find/orderBy
 select :: [(String, String)] -> [[(String, Datatype, String)]] -> [[(String, Datatype, String)]]
 select colAlias entryList
@@ -340,3 +340,4 @@ select colAlias entryList
         let alias = Data.Map.fromList colAlias
         in [newEntry | entry <- entryList, 
             let newEntry = [(fromJust newName, datatype, value) | (name, datatype, value) <- entry, let newName = Data.Map.lookup name alias, not (isNothing newName)]]
+
