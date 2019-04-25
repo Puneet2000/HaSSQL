@@ -1,6 +1,6 @@
 {-|
 Module      : Funcs
-Description : Contains standard parsers fo building up other parsers
+Description : Contains standard parsers for building up other parsers
 -}
 module Funcs where 
 import Text.Parsec.String (Parser)
