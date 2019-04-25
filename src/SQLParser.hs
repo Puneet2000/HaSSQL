@@ -45,4 +45,37 @@ evaluateSQL (Right expr)  (DB db) = do
         DELETE e -> DB (evaluateDelete (Right e) db)
 evaluateSQL (Left error) db = ERROR (show error)
 
+-- |'getHeader' returns string of headers of table
+-- First argument is list of headers
+getHeaders :: [(String,Datatype,String)] -> String
+getHeaders [] = ""
+getHeaders ((a,b,c) : xs) = (a++" ("++(show b)++")    ")++(getHeaders xs)
+
+-- |'getHeader' returns string of depicting one entire row
+-- First argument is a row
+getRow :: [(String,Datatype,String)] -> String
+getRow [] = ""
+getRow ((a,b,c) : xs) = (c++"          ")++(getRow xs)
+
+-- |'getRows' prints the rows which are the output of select query
+-- The argument is output of select parsed query
+getRows :: [[(String,Datatype,String)]] -> IO ()
+getRows [] = putStr ""
+getRows (x: xs) =  putStrLn(getRow x) *> (getRows xs)
+
+-- |'queryPrinter' prints the Select query output in a tabular fashion
+-- The argument is output of select parsed query
+queryPrinter :: ResType -> IO ()
+queryPrinter (OUT output) =  do
+  case output of
+    [] -> print("")
+    otherwise -> putStrLn("------------------------------------------------------------")
+                 *> putStrLn(getHeaders (head output))
+                 *> putStrLn("------------------------------------------------------------")
+                 *> (getRows output)
+
+
+
+
+
 
