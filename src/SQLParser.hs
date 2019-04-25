@@ -17,13 +17,24 @@ import DeleteParser
 import Database
 import Data.Map (Map)
 import qualified Data.Map as Map
+
 -- | 'SQLExpr' is a wrapping type constructor for Select, Insert and Delete statements.
-data SQLExpr = SELECT QueryExpr | INSERT InsertExpr | CREATE CreateExpr | DELETE DeleteExpr deriving (Eq, Show)
+-- 'SELECT QueryExpr' contains 
+data SQLExpr = SELECT QueryExpr -- ^Parses a SELECT query 
+               | INSERT InsertExpr  -- ^ Parses a INSERT Query
+               | CREATE CreateExpr -- ^ Parses a CREATE Query
+               | DELETE DeleteExpr -- ^ Parses a DELETE Query
+               deriving (Eq, Show)
+
 -- | 'ResType' is a wrapping type constructor for the response types of each of the above statements.
-data ResType = DB (Maybe Database) | OUT ([[(String, Datatype, String)]]) | ERROR String deriving(Eq,Show) 
+data ResType = DB (Maybe Database) -- ^ Database instance for insert, create and delete queries
+              | OUT ([[(String, Datatype, String)]]) -- ^ Return object for SELECT queries
+              | ERROR String deriving(Eq,Show) -- ^ Error type
+
 -- | 'sqlExpr' describes an SQL expression.
 sqlExpr ::  Parser SQLExpr
 sqlExpr = (SELECT <$> queryExpr ) <|> (INSERT <$> insertExpr) <|> (CREATE <$> createExpr) <|> (DELETE <$> deleteExpr)
+
 -- | 'evaluateSQL' evaluates each Expression using individual case statements
 evaluateSQL :: Either ParseError SQLExpr -> ResType -> ResType
 evaluateSQL (Right expr)  (DB db) = do 
