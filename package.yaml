@@ -1,10 +1,10 @@
 name:                hasql
 version:             0.1.0.0
-github:              "shraiysh/hasql"
+github:              "IITH-SBJoshi/haskell-8"
 license:             BSD3
-author:              "Shraiysh Vaishay"
-maintainer:          "cs17btech11050@iith.ac.in"
-copyright:           "Copyright 2019 Shraiysh Vaishay"
+author:              "IITH-SBJoshi - Team 8"
+maintainer:          ""
+copyright:           "Copyright 2019 IITH-SBJoshi - Team 8"
 
 extra-source-files:
 - README.md

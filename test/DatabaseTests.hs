@@ -59,7 +59,7 @@ testNewColumn =
 testNewTable :: H.Test
 testNewTable =
     let myCols = M.singleton "testCol" $ fromJust $ DB.newColumn "testCol" DB.INT ["testVal1", "testVal2"]
-        myNewTable = fromJust $ DB.newTable "testTable" (["testCol"], myCols)
+        myNewTable = fromJust $ DB.newTable "testTable" (["testCol"], myCols) [0,1]
     in H.TestCase (do
         H.assertEqual "Name not set properly" "testTable" $ DB.tName myNewTable
         H.assertEqual "Cols not set properly" myCols $ DB.tColumns myNewTable
@@ -68,7 +68,7 @@ testNewTable =
 testNewDatabase :: H.Test
 testNewDatabase =
     let myCols = M.singleton "testCol" $ fromJust $ DB.newColumn "testCol" DB.INT ["testVal1", "testVal2"]
-        myTables = M.singleton "testTable" $ fromJust $ DB.newTable "testTable" (["testCol"], myCols)
+        myTables = M.singleton "testTable" $ fromJust $ DB.newTable "testTable" (["testCol"], myCols) [0,1]
         myNewDB = fromJust $ DB.newDatabase "testDB" myTables
     in H.TestCase (do
         H.assertEqual "Name not set properly" "testDB" $ DB.dName myNewDB
@@ -83,10 +83,10 @@ sampleStringCol = DB.Column {
 }
 sampleColMap = M.fromList [("sampleIntCol", sampleIntCol),("sampleStringCol", sampleStringCol)]
 sampleTableOne = DB.Table {
-    DB.tName = "sampleTableOne", DB.tColumns = sampleColMap, DB.tColNameList = ["sampleIntCol", "sampleStringCol"]
+    DB.tName = "sampleTableOne", DB.tColumns = sampleColMap, DB.tColNameList = ["sampleIntCol", "sampleStringCol"], DB.tPKeys = [0,1]
 }
 sampleTableTwo = DB.Table {
-    DB.tName = "sampleTableTwo", DB.tColumns = sampleColMap, DB.tColNameList = ["sampleIntCol", "sampleStringCol"]
+    DB.tName = "sampleTableTwo", DB.tColumns = sampleColMap, DB.tColNameList = ["sampleIntCol", "sampleStringCol"], DB.tPKeys = [0,1]
 }
 sampleDB = Just DB.Database {
     DB.dName = "testDB", DB.dTables = M.fromList [("sampleTableOne", sampleTableOne), ("sampleTableTwo", sampleTableTwo)]
@@ -117,7 +117,7 @@ testCount :: H.Test
 testCount = H.TestCase(do
         H.assertEqual "count does not work properly" 2 (DB.count (Just sampleTableOne))
         H.assertEqual "count /= 0 for Nothing" 0 (DB.count Nothing)
-        H.assertEqual "count /= 0 even if there are no columns" 0 (DB.count $ DB.newTable "myNewTable" $ ([], M.fromList []))
+        H.assertEqual "count /= 0 even if there are no columns" 0 (DB.count $ DB.newTable "myNewTable" ([], M.fromList []) [])
     )
 
 testGetColumn :: H.Test
@@ -134,7 +134,7 @@ testAddNewTable =
     let myNewDB = DB.addNewTable "myNewTable" sampleDB
         searchedTable = DB.getTable "myNewTable" myNewDB
     in H.TestCase (do
-        H.assertEqual "addNewTable not adding a new Table" (DB.newTable "myNewTable" ([], M.empty)) searchedTable
+        H.assertEqual "addNewTable not adding a new Table" (DB.newTable "myNewTable" ([], M.empty) []) searchedTable
     )
 
 testAddColumnToTable :: H.Test
@@ -168,7 +168,7 @@ testFind =
     let condition = F.parseWithWSEof (Exp.valueExpr []) "sampleIntCol > 200"
         foundVals = DB.find condition sampleDB "sampleTableOne"
         expectedVals = [
-            [("sampleIntCol", DB.INT, "987"), ("sampleStringCol", DB.STRING, "testVal2s")]]
+            [(1, "sampleIntCol", DB.INT, "987"), (1, "sampleStringCol", DB.STRING, "testVal2s")]]
         in H.TestCase (do
             H.assertBool "find does not work properly" (all (\val -> elem val expectedVals) foundVals)
         )
@@ -178,8 +178,8 @@ testFind2 =
     let condition = F.parseWithWSEof (Exp.valueExpr []) "sampleIntCol > 0"
         foundVals = DB.find condition sampleDB "sampleTableOne"
         expectedVals = [
-            [("sampleIntCol", DB.INT, "987"), ("sampleStringCol", DB.STRING, "testVal2s")],
-            [("sampleIntCol", DB.INT, "123"), ("sampleStringCol", DB.STRING, "testVal1s")]]
+            [(1, "sampleIntCol", DB.INT, "987"), (1, "sampleStringCol", DB.STRING, "testVal2s")],
+            [(0, "sampleIntCol", DB.INT, "123"), (0, "sampleStringCol", DB.STRING, "testVal1s")]]
     in H.TestCase (do
         H.assertBool "find does not work properly" (all (\val -> elem val expectedVals ) foundVals)
     )
@@ -190,7 +190,7 @@ testInsert =
         condition = F.parseWithWSEof (Exp.valueExpr []) "sampleIntCol = 99"
         search99 = DB.find condition myNewDB "sampleTableOne"
         expected99 = [
-            [("sampleIntCol", DB.INT, "99"), ("sampleStringCol", DB.STRING, "newString")]]
+            [(2, "sampleIntCol", DB.INT, "99"), (2, "sampleStringCol", DB.STRING, "newString")]]
     in H.TestCase (do
         H.assertBool "insert is not working properly!" (all (\val -> elem val expected99) search99)
     )
@@ -201,7 +201,7 @@ testInsertDefault =
         condition = F.parseWithWSEof (Exp.valueExpr []) "sampleIntCol = 99"
         search99 = DB.find condition myNewDB "sampleTableOne"
         expected99 = [
-            [("sampleIntCol", DB.INT, "99"), ("sampleStringCol", DB.STRING, "newString")]]
+            [(2, "sampleIntCol", DB.INT, "99"), (2, "sampleStringCol", DB.STRING, "newString")]]
     in H.TestCase (do
         H.assertBool "insert is not working properly!" (all (\val -> elem val expected99) search99)
     )
@@ -217,9 +217,9 @@ testDelete =
     )
 
 testInputList = [
-    [("a", DB.INT, "1"), ("b", DB.INT, "3"), ("c", DB.INT, "2")],
-    [("a", DB.INT, "3"), ("b", DB.INT, "2"), ("c", DB.INT, "3")],
-    [("a", DB.INT, "2"), ("b", DB.INT, "2"), ("c", DB.INT, "2")]]
+    [(100, "a", DB.INT, "1"), (100, "b", DB.INT, "3"), (100, "c", DB.INT, "2")],
+    [(102, "a", DB.INT, "3"), (102, "b", DB.INT, "2"), (102, "c", DB.INT, "3")],
+    [(108, "a", DB.INT, "2"), (108, "b", DB.INT, "2"), (108, "c", DB.INT, "2")]]
 
 testOrderBy :: H.Test
 testOrderBy =
@@ -227,9 +227,9 @@ testOrderBy =
         input = testInputList
         output = DB.orderBy expr input
         expOutput = [
-            [("a", DB.INT, "1"), ("b", DB.INT, "3"), ("c", DB.INT, "2")],
-            [("a", DB.INT, "2"), ("b", DB.INT, "2"), ("c", DB.INT, "2")],
-            [("a", DB.INT, "3"), ("b", DB.INT, "2"), ("c", DB.INT, "3")]]
+            [(100, "a", DB.INT, "1"), (100, "b", DB.INT, "3"), (100, "c", DB.INT, "2")],
+            [(108, "a", DB.INT, "2"), (108, "b", DB.INT, "2"), (108, "c", DB.INT, "2")],
+            [(102, "a", DB.INT, "3"), (102, "b", DB.INT, "2"), (102, "c", DB.INT, "3")]]
     in H.TestCase (do
         H.assertBool "orderBy does not work properly" (all (\i -> output !! i == expOutput !! i) [0..length output-1])
     )
@@ -240,9 +240,9 @@ testSelect =
         output1 = DB.select [("a", "Testa"), ("c", "Testc")] input
         output2 = DB.select [] input
         exp1 = [
-            [("Testa", DB.INT, "1"), ("Testc", DB.INT, "2")],
-            [("Testa", DB.INT, "3"), ("Testc", DB.INT, "3")],
-            [("Testa", DB.INT, "2"), ("Testc", DB.INT, "2")]]
+            [(100, "Testa", DB.INT, "1"), (100, "Testc", DB.INT, "2")],
+            [(102, "Testa", DB.INT, "3"), (102, "Testc", DB.INT, "3")],
+            [(108, "Testa", DB.INT, "2"), (108, "Testc", DB.INT, "2")]]
         exp2 = testInputList
     in H.TestCase (do
         H.assertBool "select does not work properly" (all (\val -> elem val exp1) output1)
