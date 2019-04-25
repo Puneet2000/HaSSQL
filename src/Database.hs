@@ -52,15 +52,16 @@ sampleCommands = do
 
     let m = F.parseWithWSEof (Exp.valueExpr []) "BoolCol"
     let n = F.parseWithWSEof (Exp.valueExpr []) "Phone_number > 0"
-    let o = F.parseWithWSEof (Exp.valueExpr []) "Phone_number = 12345"
+    let o = F.parseWithWSEof (Exp.valueExpr []) "Phone_number = 78910"
     let p = F.parseWithWSEof (Exp.valueExpr []) "-1 * Phone_number"
     -- print m
-    let x = delete n my_db_1 "table 1"
+    let x = delete o my_db_1 "table 1"
     print("Y=-------------------->")
-    print x
+    -- print x
     -- print n
     let x = find n my_db_1 "table 1"
-    -- print x
+    let y = orderBy p x
+    print y
     let y = select [("BoolCol", "IsFemale"), ("Phone_number", "home_number")] $ orderBy p x
     -- print y
     -- print o
@@ -107,17 +108,19 @@ newColumn name datatype values = Just Column {
 data Table = Table {
     tName :: String,
     tColNameList :: [String],
-    tColumns :: Data.Map.Map String Column
+    tColumns :: Data.Map.Map String Column,
+    tPKeys :: [Int]
 } deriving (Show, Eq)
 
 -- | 'newTable' returns new table (Maybe Table)
 -- First argument is table name
 -- Second argument is (list of colNames, Map of those colnames -> Columns)
-newTable :: String -> ([String], Data.Map.Map String Column) -> Maybe Table
-newTable name (colNameList, columns) = Just Table {
+newTable :: String -> ([String], Data.Map.Map String Column) -> [Int] -> Maybe Table
+newTable name (colNameList, columns) pKeys= Just Table {
     tName = name,
     tColNameList = colNameList,
-    tColumns = columns
+    tColumns = columns,
+    tPKeys = pKeys
 }
 
 -- | 'Database' stores a database with a name and map of tables indexed by their names
@@ -184,7 +187,7 @@ addNewTable tableName database
     | isNothing database = Nothing
     | otherwise = Just Database {
         dName = dName $ fromJust database,
-        dTables = Data.Map.insert tableName (fromJust $ newTable tableName ([],Data.Map.empty)) (dTables $ fromJust database)
+        dTables = Data.Map.insert tableName (fromJust $ newTable tableName ([],Data.Map.empty) []) (dTables $ fromJust database)
     }
 
 -- | 'addColumnToTable' adds a column to a table and returns new table (Table)
@@ -193,7 +196,7 @@ addNewTable tableName database
 -- Third argumenr is old table (Table)
 addColumnToTable :: String -> Datatype -> Table -> Table
 addColumnToTable columnName datatype table = fromJust $ newTable (tName table)
-        ((tColNameList table) ++ [columnName], (Data.Map.insert columnName (fromJust $ newColumn columnName datatype []) (tColumns table)))
+        ((tColNameList table) ++ [columnName], Data.Map.insert columnName (fromJust $ newColumn columnName datatype []) (tColumns table)) (tPKeys table)
 
 -- | 'addColumn' adds a column to specific table in database and returns new database (Maybe Database)
 -- First argument is column name (String)
@@ -218,7 +221,7 @@ insertOne value datatype database tableName columnName
         = database -- Invalid table name or col name
     | datatype /= cDatatype (fromJust $ getColumn columnName $ getTable tableName database )= database -- Datatypes dont match
     | otherwise = newDatabase (dName $ fromJust database) (Data.Map.adjust f tableName $ dTables $ fromJust database)
-    where f = (\table -> fromJust $ newTable (tName table) (tColNameList table, (Data.Map.adjust g columnName $ tColumns table)))
+    where f = (\table -> fromJust $ newTable (tName table) (tColNameList table, (Data.Map.adjust g columnName $ tColumns table)) (tPKeys table))
           g = (\column -> fromJust $ newColumn (cName column) (cDatatype column) ((cValues column) ++ [value]))
 
 
@@ -234,7 +237,18 @@ isValidDatatype t colList typeList
         let (dType:dTypes) = typeList
             (col:cols) = colList
         in (dType == cDatatype (fromJust $ getColumn col t)) && (isValidDatatype t cols dTypes)
-          
+
+-- | 'addPrimaryKeyToTable' adds one primary key to a table
+-- First argument is a table (Table)
+addPrimaryKeyToTable :: Table -> Table
+addPrimaryKeyToTable table = fromJust $ newTable (tName table) (tColNameList table, tColumns table) (let pKeys = tPKeys table in if pKeys == [] then [0] else pKeys ++ [maximum pKeys + 1])
+
+-- | 'addPrimaryKey' adds one primary key to table in database
+-- First argument is database (Maybe Database)
+-- Second argument is table name (String)
+addPrimaryKey :: Maybe Database -> String -> Maybe Database
+addPrimaryKey db tableName = newDatabase (dName $ fromJust db)
+        (Data.Map.adjust addPrimaryKeyToTable tableName $ dTables $ fromJust db)
 
 -- | 'insert' inserts an entry (row) in database -> table and returns new database
 -- First argumenr is list of colNames [String]
@@ -245,7 +259,7 @@ isValidDatatype t colList typeList
 insert :: [String] -> [String] -> [Datatype] -> Maybe Database -> String -> Maybe Database
 insert columnNames values datatypes db tableName 
     | length values /= length datatypes || not (isValidDatatype (getTable tableName db) columnNames datatypes) || length columnNames /= length values = db --Mismatch in length of names, values and datatypes
-    | length values == 0 = db -- Base case
+    | length values == 0 = addPrimaryKey db tableName -- Base case
     | otherwise = do
         let v = head values; vs = tail values
         let d = head datatypes; ds = tail datatypes
@@ -274,9 +288,9 @@ getColList table db= Data.Map.elems (tColumns $ fromJust $ getTable table db)
 -- First argument is tableName
 -- Second argument is database
 -- Third argument is index
-findEntryAtIndex :: String -> Maybe Database -> Int -> [(String, Datatype, String)]
+findEntryAtIndex :: String -> Maybe Database -> Int -> [(Int, String, Datatype, String)]
 findEntryAtIndex tableName db index = [ cell | col <- getColList tableName db,
-    let cell = (cName col, cDatatype col, (cValues col) !! index)]
+    let cell = ((tPKeys $ fromJust $ getTable tableName db) !! index, cName col, cDatatype col, (cValues col) !! index)]
 
 -- 'litValue' is a utility function to support evaluation of ValueExpr on columns (which are stored as String)
 litValue :: String -> Datatype -> Exp.ValueExpr
@@ -289,7 +303,7 @@ litValue value datatype
 -- First argument is value (Right) ValueExpr that evaluates to true or false
 -- Second argument is database (Maybe Database)
 -- Third argument is table name
-find :: Either Text.Parsec.Error.ParseError Exp.ValueExpr -> Maybe Database -> String -> [[(String, Datatype, String)]]
+find :: Either Text.Parsec.Error.ParseError Exp.ValueExpr -> Maybe Database -> String -> [[(Int, String, Datatype, String)]]
 find (Right condition) db tableName
     | isNothing db || not (containsTable tableName db) = []
     | otherwise =
@@ -300,7 +314,7 @@ find (Right condition) db tableName
         in [findEntryAtIndex tableName db n | n <- indices]
 
 -- | 'deleteFromList' is a utility function to delete an entry from a list
-deleteFromList :: Int -> [String] -> [String]
+deleteFromList :: Int -> [a] -> [a]
 deleteFromList index xs = (take index xs) ++ reverse(take (length xs - index - 1) (reverse xs))
 
 -- | 'deleteEntryAtIndex' deletes an entry from the table
@@ -313,10 +327,14 @@ deleteEntryAtIndex index db tableName
     | otherwise = do
         let my_db = fromJust db
         newDatabase (dName my_db) (Data.Map.adjust f tableName $ dTables my_db)
-    where f = \table -> (fromJust $ newTable (tName table) (tColNameList table, (Data.Map.fromList new_cols)))
+    where f = \table -> (fromJust $ newTable (tName table) (tColNameList table, (Data.Map.fromList new_cols)) (deleteFromList index $ tPKeys table))
           cols = Data.Map.elems $ tColumns $ fromJust $ getTable tableName db
           new_cols = [(cName col, fromJust $ newColumn (cName col) (cDatatype col) (deleteFromList index $ cValues col)) | col <- cols]
 
+-- | 'deleteEntryAtIndices' is used to delete multiple entries from a specific table of a database
+-- First argument is list of indices [Int]
+-- Second argument is database (Maybe Database)
+-- Third argumenr is table name (String)
 deleteEntryAtIndices :: [Int] -> Maybe Database -> String -> Maybe Database
 deleteEntryAtIndices indexList db tableName
     | isNothing db || indexList == [] || not (containsTable tableName db) = db
@@ -325,6 +343,10 @@ deleteEntryAtIndices indexList db tableName
             newDB = deleteEntryAtIndex index db tableName
         in deleteEntryAtIndices [index-1 | index <- indices] newDB tableName
 
+-- | 'delete' deletes all entries that follow a specific condition from a table
+-- First argument is condition
+-- Second argument is Maybe Database
+-- Third argument is table name (String)
 delete :: Either Text.Parsec.Error.ParseError Exp.ValueExpr -> Maybe Database -> String -> Maybe Database
 delete (Right condition) db tableName
     | isNothing db || not (containsTable tableName db) = db
@@ -338,26 +360,26 @@ delete (Right condition) db tableName
 -- | 'orderBy' orders the entries given by find based on the value given by expression
 -- First argument is the expression that gives the deciding value
 -- Second argument is the entrylist returned by find / select
-orderBy :: Either Text.Parsec.Error.ParseError Exp.ValueExpr -> [[(String, Datatype, String)]] -> [[(String, Datatype, String)]]
+orderBy :: Either Text.Parsec.Error.ParseError Exp.ValueExpr -> [[(Int, String, Datatype, String)]] -> [[(Int, String, Datatype, String)]]
 orderBy (Right expr) entryList
     | length entryList == 0 = []
     | otherwise =
         sortBy (\entry1 entry2-> 
-            let map1 = Data.Map.fromList [(colName, litValue (value) colDatatype) | (colName, colDatatype, value) <- entry1]
-                map2 = Data.Map.fromList [(colName, litValue (value) colDatatype) | (colName, colDatatype, value) <- entry2]
+            let map1 = Data.Map.fromList [(colName, litValue (value) colDatatype) | (pKey, colName, colDatatype, value) <- entry1]
+                map2 = Data.Map.fromList [(colName, litValue (value) colDatatype) | (pKey, colName, colDatatype, value) <- entry2]
                 val1 = Exp.evaluateExpr map1 expr
                 val2 = Exp.evaluateExpr map2 expr
-            in if val1 > val2 then GT else if val1 < val2 then LT else EQ) entryList
+            in compare val1 val2) entryList
 
 -- | 'select' selects specific columns from the output of find/orderBy and returns list of entries with those columns only
 -- First argument is column alias (if new name of the columns is needed, then this is used). If this is empty, all columns with default names are returned
 -- Second argument is output of find/orderBy
-select :: [(String, String)] -> [[(String, Datatype, String)]] -> [[(String, Datatype, String)]]
+select :: [(String, String)] -> [[(Int, String, Datatype, String)]] -> [[(Int, String, Datatype, String)]]
 select colAlias entryList
     | length entryList == 0 = []
     | length colAlias == 0 = entryList
     | otherwise =
         let alias = Data.Map.fromList colAlias
         in [newEntry | entry <- entryList, 
-            let newEntry = [(fromJust newName, datatype, value) | (name, datatype, value) <- entry, let newName = Data.Map.lookup name alias, not (isNothing newName)]]
+            let newEntry = [(pKey, fromJust newName, datatype, value) | (pKey, name, datatype, value) <- entry, let newName = Data.Map.lookup name alias, not (isNothing newName)]]
 
