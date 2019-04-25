@@ -1,11 +1,8 @@
 module Main where
 
-import ExpressionParser
 import Funcs
-import CreateParser
 import Database
-import InsertParser
-import QueryParser
+import SQLParser
 
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -13,18 +10,18 @@ import qualified Data.Map as Map
 main :: IO ()
 -- main = print (regularParse createExpr "create table table1 ( c1 INTEGER , c2 INTEGER )")
 main = do
-    let cr = regularParse createExpr "create table table1 ( c1 INTEGER , c2 STRING , c3 BOOL)"
+    let cr = regularParse sqlExpr "create table table1 ( c1 INTEGER , c2 STRING , c3 BOOL)"
     let mdb = newDatabase "mdb1" Map.empty
-    let mdb2 = evaluateCreate (regularParse createExpr "create table table1 ( c1 INTEGER , c2 STRING , c3 BOOL)") mdb
-    let mdb3 = evaluateInsert (regularParse insertExpr "insert into table1 values (1,'Puneet',True)") mdb2
-    let mdb4 = evaluateInsert (regularParse insertExpr "insert into table1 values (11,'Shraiysh',False)") mdb3
-    let mdb5 = evaluateInsert (regularParse insertExpr "insert into table1 values (1,'Sai ramana',True)") mdb4
-    let mdb6 = evaluateInsert (regularParse insertExpr "insert into table1 values (2,'Hitesh',False)") mdb5
-    let mdb7 = evaluateInsert (regularParse insertExpr "insert into table1 values (5,'POPL',True)") mdb6
-    let mdb8 = evaluateInsert (regularParse insertExpr "insert into table1 values (7,'Project',True)") mdb7
-    --print(mdb4)
-    let sel =  regularParse queryExpr "select * from table1"
-    let out = evaluateQuery sel mdb8
+    let mdb2 = evaluateSQL (regularParse sqlExpr "create table table1 ( c1 INTEGER , c2 STRING , c3 BOOL)") (DB mdb)
+    let mdb3 = evaluateSQL (regularParse sqlExpr "insert into table1 values (1,'Puneet',True)") mdb2
+    let mdb4 = evaluateSQL (regularParse sqlExpr "insert into table1 values (11,'Shraiysh',False)") mdb3
+    let mdb5 = evaluateSQL (regularParse sqlExpr "insert into table1 values (1,'Sai ramana',True)") mdb4
+    let mdb6 = evaluateSQL (regularParse sqlExpr "insert into table1 values (2,'Hitesh',False)") mdb5
+    let mdb7 = evaluateSQL (regularParse sqlExpr "insert into table1 values (5,'POPL',True)") mdb6
+    let mdb8 = evaluateSQL (regularParse sqlExpr "insert into table1 values (7,'Project',True)") mdb7
+    print(mdb8)
+    let sel =  regularParse sqlExpr "delete from table1 where True"
+    let out = evaluateSQL sel mdb8
     print(out)
 
     -- sampleCommands
