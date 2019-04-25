@@ -19,10 +19,10 @@ main = do
     let mdb6 = evaluateSQL (regularParse sqlExpr "insert into table1 values (2,'Hitesh',False)") mdb5
     let mdb7 = evaluateSQL (regularParse sqlExpr "insert into table1 values (5,'POPL',True)") mdb6
     let mdb8 = evaluateSQL (regularParse sqlExpr "insert into table1 values (7,'Project',True)") mdb7
-    print(mdb8)
-    let sel =  regularParse sqlExpr "delete from table1 where True"
+    --print(mdb8)
+    let sel =  regularParse sqlExpr "select * from table1"
     let out = evaluateSQL sel mdb8
-    print(out)
+    queryPrinter out
 
     -- sampleCommands
     -- print("Hello")
