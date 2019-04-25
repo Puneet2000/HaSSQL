@@ -237,9 +237,15 @@ isValidDatatype t colList typeList
         let (dType:dTypes) = typeList
             (col:cols) = colList
         in (dType == cDatatype (fromJust $ getColumn col t)) && (isValidDatatype t cols dTypes)
-    
+
+-- | 'addPrimaryKeyToTable' adds one primary key to a table
+-- First argument is a table (Table)
 addPrimaryKeyToTable :: Table -> Table
 addPrimaryKeyToTable table = fromJust $ newTable (tName table) (tColNameList table, tColumns table) (let pKeys = tPKeys table in if pKeys == [] then [0] else pKeys ++ [maximum pKeys + 1])
+
+-- | 'addPrimaryKey' adds one primary key to table in database
+-- First argument is database (Maybe Database)
+-- Second argument is table name (String)
 addPrimaryKey :: Maybe Database -> String -> Maybe Database
 addPrimaryKey db tableName = newDatabase (dName $ fromJust db)
         (Data.Map.adjust addPrimaryKeyToTable tableName $ dTables $ fromJust db)
@@ -325,6 +331,10 @@ deleteEntryAtIndex index db tableName
           cols = Data.Map.elems $ tColumns $ fromJust $ getTable tableName db
           new_cols = [(cName col, fromJust $ newColumn (cName col) (cDatatype col) (deleteFromList index $ cValues col)) | col <- cols]
 
+-- | 'deleteEntryAtIndices' is used to delete multiple entries from a specific table of a database
+-- First argument is list of indices [Int]
+-- Second argument is database (Maybe Database)
+-- Third argumenr is table name (String)
 deleteEntryAtIndices :: [Int] -> Maybe Database -> String -> Maybe Database
 deleteEntryAtIndices indexList db tableName
     | isNothing db || indexList == [] || not (containsTable tableName db) = db
@@ -333,6 +343,10 @@ deleteEntryAtIndices indexList db tableName
             newDB = deleteEntryAtIndex index db tableName
         in deleteEntryAtIndices [index-1 | index <- indices] newDB tableName
 
+-- | 'delete' deletes all entries that follow a specific condition from a table
+-- First argument is condition
+-- Second argument is Maybe Database
+-- Third argument is table name (String)
 delete :: Either Text.Parsec.Error.ParseError Exp.ValueExpr -> Maybe Database -> String -> Maybe Database
 delete (Right condition) db tableName
     | isNothing db || not (containsTable tableName db) = db
