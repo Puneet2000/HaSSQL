@@ -20,7 +20,7 @@ import qualified Data.Map as Map
 
 -- | 'SQLExpr' is a wrapping type constructor for Select, Insert and Delete statements.
 -- 'SELECT QueryExpr' contains 
-data SQLExpr = SELECT QueryExpr -- ^Parses a SELECT query 
+data SQLExpr = SELECT QueryExpr -- ^ Parses a SELECT query 
                | INSERT InsertExpr  -- ^ Parses a INSERT Query
                | CREATE CreateExpr -- ^ Parses a CREATE Query
                | DELETE DeleteExpr -- ^ Parses a DELETE Query
