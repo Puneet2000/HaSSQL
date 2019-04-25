@@ -6,16 +6,18 @@ import SQLParser
 import System.IO
 import Data.Map (Map)
 import qualified Data.Map as Map
--- | prettyprint checks the type of response and prints it if possible. Otherwise, 
+-- | 'check' checks the type of response and prints it if possible. Otherwise, 
 check :: ResType -> ResType -> IO()
 check resp prev = case resp of 
     OUT arg -> do
-        print(arg)
+        queryPrinter resp
         hFlush stdout
     DB arg -> do
         putStrLn "Done!"
+        hFlush stdout
     ERROR arg -> do
         putStrLn "Error!"
+        hFlush stdout
         func prev
 
 evaluate :: String -> ResType -> ResType
@@ -42,32 +44,21 @@ func prev = do
     -- let out = evaluateSQL sel mdb8
     -- print(out)
     input <- prompt ">>> "
-    case take 6 input of
-        "exit" -> do
-            putStrLn "Exiting."
-        "output" -> do
-            print(prev)
-            func prev
-        "create" -> do
-            -- putStrLn "create statement"
+    if take 6 input `elem` ["create", "select", "delete", "insert"]
+        then do
             let output = evaluate input prev
             check output prev
             func output
-        "select" -> do
-            -- putStrLn "select"
-            let output = evaluate input prev
-            func output
-        "delete" -> do
-            -- putStrLn "delete"
-            let output = evaluate input prev
-            func output
-        "insert" -> do
-            -- putStrLn "insert"
-            let output = evaluate input prev
-            func output
-        otherwise -> do
-            putStrLn "Error! Invalid Input."
-            func prev
+        else
+            case take 6 input of
+                "exit" -> do
+                    putStrLn "Exiting."
+                "output" -> do
+                    print(prev)
+                    func prev
+                otherwise -> do
+                    putStrLn "Error! Invalid Input."
+                    func prev
 main :: IO ()
 main = do
     let cr = regularParse sqlExpr "create table table1 ( c1 INTEGER , c2 STRING , c3 BOOL)"
