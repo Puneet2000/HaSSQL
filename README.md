@@ -111,7 +111,7 @@ Haskell Simple Structured Query Language is a subset of SQL with a local databas
 	- Don't close the issue by your own.
 7. **Commenting your Code**
 	- Haddock understands various annotations in the source file, and puts them in the generated docs.
-  - Please refer [this link](https://www.haskell.org/haddock/doc/html/markup.html) to know how to comment your source code in order to generate good documentation.
+	- Please refer [this link](https://www.haskell.org/haddock/doc/html/markup.html) to know how to comment your source code in order to generate good documentation.
 
  
 
