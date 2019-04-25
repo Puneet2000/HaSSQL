@@ -5,17 +5,25 @@
 
 Haskell Simple Structured Query Language is a subset of SQL with a local database integration based on Parsec Library.
 
+* [Description](#description)
+* [Documentation](#documentation)
+* [Setup](#setup)
+* [Grammar](#grammar)
+* [Usage and Syntax](#usage-and-syntax)
+* [Examples](#examples)
+* [Guidelines for contribution](#guidelines-for-contribution)
+
 ## Description
 1. **Objective**
-        - Understand Functional programming paradigm.
-        - Using software technologies like Continous Integration , Unit Testing , Documentation .
+	- Understand Functional programming paradigm.
+	- Using software technologies like Continous Integration , Unit Testing , Documentation .
 2. **Features/Design**
-        - Supports ```Select```, ```Create```, ```Insert```, ```Delete``` queries.
-        - Supports ```From```, ```Where```, ```ORDER BY``` Clauses.
-        - Supports ```Integer```, ```Boolean```, ```String``` Literals.
-        - Support aliases in ```Select``` query.
-        - A local database backend support to perform queries live.
-        - A Command Line Interface for easy Usage.
+	- Supports ```Select```, ```Create```, ```Insert```, ```Delete``` queries.
+	- Supports ```From```, ```Where```, ```ORDER BY``` Clauses.
+	- Supports ```Integer```, ```Boolean```, ```String``` Literals.
+	- Support aliases in ```Select``` query.
+	- A local database backend support to perform queries live.
+	- A Command Line Interface for easy Usage.
 3. **Team**
 	- Shraiysh Gupta (CS17BTECH11050)
 	- Puneet Mangla (CS17BTECH11029)
@@ -40,17 +48,21 @@ Haskell Simple Structured Query Language is a subset of SQL with a local databas
      ```
  ## Grammar
  ```
- <table_name> or <column_name> -> <Iden>
- <Iden> -> valid identifier except reserved keywords like from, where, order, by, select, insert, into, create, delete etc.
+ <table_name> or <column_name> or <alias> -> <Iden>
+ <Iden> -> valid identifier except reserved keywords like from, where, order etc.
  <datatype> -> INTEGER | STRING | BOOL
  <value> -> <NumLit> | <BoolLit> | <StringLit>
  <BoolLit> -> True | False
  <StringLit> -> valid string in single quotes eg : 'Hello World`
  <NumLit> -> (digit)+
- <value_expression> -> <NumLit> | <BoolLit> | <StringLit> | <Iden> 
- 
+ <value_expression> -> <NumLit> | <BoolLit> | <StringLit> 
+ 			| <Iden> | (<value_expression>) | * 
+				| <value_expression> <BinOp> <value_expression>
+				| <PrefOp> <value_expression>
+ <PreOp> -> - | + | not 
+ <BinOp> -> ^ | * | / | % | + | - | <= | >= | != | < | > | = | and | or
  ```
- ## Usage/Syntax
+ ## Usage and Syntax
  1. **Create table**
       -  ```create table <table_name> (<column_name> <datatype> ,<column_name> <datatype> ... )```
  2. **Insert record**
@@ -59,8 +71,21 @@ Haskell Simple Structured Query Language is a subset of SQL with a local databas
  3. **Delete records**
       - ```delete from <table_name> where <value_expression>```
  4. **Select records**
-      - ```select <column_name>, <column_name> ... from <table_name> where <value_expession> order by <value_expession>, <value_expession> ...```
+      - ```select <column_name> as <alias>, <column_name> as <alias> ... from <table_name> where <value_expession> order by <value_expession>, <value_expession> ...```
+      - ```select <column_name> <alias>, <column_name> <alias> ... from <table_name> where <value_expession> order by <value_expession>, <value_expession> ...```
       - To select all columns : ```select * from <table_name> where <value_expession> order by <value_expession>, <value_expession> ...```
+ 
+ ## Examples
+ ```
+ 1. create table table1 ( c1 INTEGER , c2 STRING , c3 BOOL)
+ 2. insert into table1 values (1,'Puneet',True)
+ 3. insert into table1 values (11,'Shraiysh',False)
+ 4. select * from table1
+ 5. select * from table1 where c1>5 order by c1*c1 - c1
+ 6. select c1,c2 from table1 where c3
+ 7. select c1 as a, c2 as b from table1 where c3
+ 8. select c1 a, c2 b from table1 where (not c3)
+ ```
       
 ## Guidelines for contribution :
 1. Take open issues and ask for assignment in comment section.
