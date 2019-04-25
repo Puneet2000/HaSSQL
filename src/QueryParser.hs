@@ -87,14 +87,14 @@ eval (Iden s) = s
 -- First argument is parsed where 'ValueExpr' 
 -- Second argument is Maybe Database instance
 -- Third arhument is table Name
-evalWhere :: Maybe ValueExpr -> Maybe Database -> String -> [[(String, Datatype, String)]]
+evalWhere :: Maybe ValueExpr -> Maybe Database -> String -> [[(Int,String, Datatype, String)]]
 evalWhere (Just expr) db tname = find (Right expr) db tname
 evalWhere (Nothing) db tname = find (Right (BoolLit True)) db tname
 
 -- |'evalOrderBy' evaluates a order by clause
 -- First argument is parsed orderby 'ValueExpr' list
 -- Second argument is output of where clause
-evalOrderBy :: [ValueExpr]-> [[(String, Datatype, String)]] -> [[(String, Datatype, String)]]
+evalOrderBy :: [ValueExpr]-> [[(Int,String, Datatype, String)]] -> [[(Int,String, Datatype, String)]]
 evalOrderBy [] out = out
 evalOrderBy (x : xs) out = evalOrderBy xs (orderBy (Right x) out)
 
@@ -111,7 +111,7 @@ evalSelect (x : xs) = do
 -- |'evaluateQuery' evaluates a query expression
 -- First argument is parsed query expression
 -- Second argument is Maybe Database instance
-evaluateQuery :: Either ParseError QueryExpr -> Maybe Database -> [[(String, Datatype, String)]]
+evaluateQuery :: Either ParseError QueryExpr -> Maybe Database -> [[(Int,String, Datatype, String)]]
 evaluateQuery (Right expr) db = do 
   let out1 = evalWhere (qeWhere expr) db (eval (qefromClause expr))
   let out2 = evalOrderBy (qeOrderBy expr) out1

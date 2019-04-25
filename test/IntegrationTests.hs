@@ -37,7 +37,7 @@ makeTest parseExpr evalExpr db (src,expected) = H.TestLabel src $ H.TestCase $ d
     let gote = evalExpr (regularParse parseExpr src) db
     H.assertEqual src expected gote
 
-makeTest2 :: Parser a -> (Either ParseError a -> Maybe Database -> [[(String, Datatype, String)]]) -> Maybe Database -> (String , [[(String, Datatype, String)]]) -> H.Test
+makeTest2 :: Parser a -> (Either ParseError a -> Maybe Database -> [[(Int,String, Datatype, String)]]) -> Maybe Database -> (String , [[(Int,String, Datatype, String)]]) -> H.Test
 makeTest2 parseExpr evalExpr db (src,expected) = H.TestLabel src $ H.TestCase $ do
     let gote = evalExpr (regularParse parseExpr src) db
     H.assertEqual src expected gote
@@ -91,47 +91,47 @@ integrationInsertTests = [("insert into table1 (c1,c2,c3) values (1,'Hello',True
                          , tPKeys = [0]})]}))
                          ]
 
-integrationQueryTests :: [(String , [[(String, Datatype, String)]])]
+integrationQueryTests :: [(String , [[(Int,String, Datatype, String)]])]
 integrationQueryTests = [("select c1,c2 from table1 order by -c1",
-                           [[("c1",INT,"11"),("c2",STRING,"Shraiysh")]
-                           ,[("c1",INT,"7"),("c2",STRING,"Project")]
-                           ,[("c1",INT,"5"),("c2",STRING,"POPL")]
-                           ,[("c1",INT,"2"),("c2",STRING,"Hitesh")]
-                           ,[("c1",INT,"1"),("c2",STRING,"Puneet")]
-                           ,[("c1",INT,"1"),("c2",STRING,"Sai ramana")]]
+                           [[(1, "c1",INT,"11"),(1, "c2",STRING,"Shraiysh")]
+                           ,[(5, "c1",INT,"7"),(5, "c2",STRING,"Project")]
+                           ,[(4, "c1",INT,"5"),(4, "c2",STRING,"POPL")]
+                           ,[(3, "c1",INT,"2"),(3, "c2",STRING,"Hitesh")]
+                           ,[(0, "c1",INT,"1"),(0, "c2",STRING,"Puneet")]
+                           ,[(2, "c1",INT,"1"),(2, "c2",STRING,"Sai ramana")]]
                           )
                          , ("select c1,c2,c3 from table1 order by c1*c1 - c1",
-                            [[("c1",INT,"1"),("c2",STRING,"Puneet"),("c3",BOOL,"True")]
-                            ,[("c1",INT,"1"),("c2",STRING,"Sai ramana"),("c3",BOOL,"True")]
-                            ,[("c1",INT,"2"),("c2",STRING,"Hitesh"),("c3",BOOL,"False")]
-                            ,[("c1",INT,"5"),("c2",STRING,"POPL"),("c3",BOOL,"True")]
-                            ,[("c1",INT,"7"),("c2",STRING,"Project"),("c3",BOOL,"True")]
-                            ,[("c1",INT,"11"),("c2",STRING,"Shraiysh"),("c3",BOOL,"False")]]
+                            [[(0, "c1",INT,"1"),(0, "c2",STRING,"Puneet"),(0, "c3",BOOL,"True")]
+                            ,[(2, "c1",INT,"1"),(2, "c2",STRING,"Sai ramana"),(2, "c3",BOOL,"True")]
+                            ,[(3, "c1",INT,"2"),(3, "c2",STRING,"Hitesh"),(3, "c3",BOOL,"False")]
+                            ,[(4, "c1",INT,"5"),(4, "c2",STRING,"POPL"),(4, "c3",BOOL,"True")]
+                            ,[(5, "c1",INT,"7"),(5, "c2",STRING,"Project"),(5, "c3",BOOL,"True")]
+                            ,[(1, "c1",INT,"11"),(1, "c2",STRING,"Shraiysh"),(1, "c3",BOOL,"False")]]
                             )
                          , ("select c1,c2 from table1 where c1<5 order by -c1",
-                            [[("c1",INT,"2"),("c2",STRING,"Hitesh")]
-                            ,[("c1",INT,"1"),("c2",STRING,"Puneet")]
-                            ,[("c1",INT,"1"),("c2",STRING,"Sai ramana")]]
+                            [[(3, "c1",INT,"2"),(3, "c2",STRING,"Hitesh")]
+                            ,[(0, "c1",INT,"1"),(0, "c2",STRING,"Puneet")]
+                            ,[(2, "c1",INT,"1"),(2, "c2",STRING,"Sai ramana")]]
                             )
                          , ("select c1,c2 from table1 where c3 order by -c1",
-                            [[("c1",INT,"7"),("c2",STRING,"Project")]
-                            ,[("c1",INT,"5"),("c2",STRING,"POPL")]
-                            ,[("c1",INT,"1"),("c2",STRING,"Puneet")]
-                            ,[("c1",INT,"1"),("c2",STRING,"Sai ramana")]]
+                            [[(5, "c1",INT,"7"),(5, "c2",STRING,"Project")]
+                            ,[(4, "c1",INT,"5"),(4, "c2",STRING,"POPL")]
+                            ,[(0, "c1",INT,"1"),(0, "c2",STRING,"Puneet")]
+                            ,[(2, "c1",INT,"1"),(2, "c2",STRING,"Sai ramana")]]
                             )
                          ,("select * from table1 where c3 order by c1",
-                           [[("c1",INT,"1"),("c2",STRING,"Puneet"),("c3",BOOL,"True")]
-                           ,[("c1",INT,"1"),("c2",STRING,"Sai ramana"),("c3",BOOL,"True")]
-                           ,[("c1",INT,"5"),("c2",STRING,"POPL"),("c3",BOOL,"True")]
-                           ,[("c1",INT,"7"),("c2",STRING,"Project"),("c3",BOOL,"True")]]
+                           [[(0, "c1",INT,"1"),(0, "c2",STRING,"Puneet"),(0, "c3",BOOL,"True")]
+                           ,[(2, "c1",INT,"1"),(2, "c2",STRING,"Sai ramana"),(2, "c3",BOOL,"True")]
+                           ,[(4, "c1",INT,"5"),(4, "c2",STRING,"POPL"),(4, "c3",BOOL,"True")]
+                           ,[(5, "c1",INT,"7"),(5, "c2",STRING,"Project"),(5, "c3",BOOL,"True")]]
                           )
                          ,("select * from table1",
-                           [[("c1",INT,"1"),("c2",STRING,"Puneet"),("c3",BOOL,"True")]
-                           ,[("c1",INT,"11"),("c2",STRING,"Shraiysh"),("c3",BOOL,"False")]
-                           ,[("c1",INT,"1"),("c2",STRING,"Sai ramana"),("c3",BOOL,"True")]
-                           ,[("c1",INT,"2"),("c2",STRING,"Hitesh"),("c3",BOOL,"False")]
-                           ,[("c1",INT,"5"),("c2",STRING,"POPL"),("c3",BOOL,"True")]
-                           ,[("c1",INT,"7"),("c2",STRING,"Project"),("c3",BOOL,"True")]]
+                           [[(0, "c1",INT,"1"),(0, "c2",STRING,"Puneet"),(0, "c3",BOOL,"True")]
+                           ,[(1, "c1",INT,"11"),(1, "c2",STRING,"Shraiysh"),(1, "c3",BOOL,"False")]
+                           ,[(2, "c1",INT,"1"),(2, "c2",STRING,"Sai ramana"),(2, "c3",BOOL,"True")]
+                           ,[(3, "c1",INT,"2"),(3, "c2",STRING,"Hitesh"),(3, "c3",BOOL,"False")]
+                           ,[(4, "c1",INT,"5"),(4, "c2",STRING,"POPL"),(4, "c3",BOOL,"True")]
+                           ,[(5, "c1",INT,"7"),(5, "c2",STRING,"Project"),(5, "c3",BOOL,"True")]]
                           )
                          ]
 

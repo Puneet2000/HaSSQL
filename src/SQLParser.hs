@@ -28,7 +28,7 @@ data SQLExpr = SELECT QueryExpr -- ^Parses a SELECT query
 
 -- | 'ResType' is a wrapping type constructor for the response types of each of the above statements.
 data ResType = DB (Maybe Database) -- ^ Database instance for insert, create and delete queries
-              | OUT ([[(String, Datatype, String)]]) -- ^ Return object for SELECT queries
+              | OUT ([[(Int,String, Datatype, String)]]) -- ^ Return object for SELECT queries
               | ERROR String deriving(Eq,Show) -- ^ Error type
 
 -- | 'sqlExpr' describes an SQL expression.
@@ -47,21 +47,21 @@ evaluateSQL (Left error) db = ERROR (show error)
 
 -- |'getHeader' returns string of headers of table
 -- First argument is list of headers
-getHeaders :: [(String,Datatype,String)] -> String
+getHeaders :: [(Int,String,Datatype,String)] -> String
 getHeaders [] = ""
-getHeaders ((a,b,c) : xs) = (a++" ("++(show b)++")    ")++(getHeaders xs)
+getHeaders ((d,a,b,c) : xs) = (a++" ("++(show b)++"), ")++(getHeaders xs)
 
 -- |'getHeader' returns string of depicting one entire row
 -- First argument is a row
-getRow :: [(String,Datatype,String)] -> String
+getRow :: [(Int,String,Datatype,String)] -> String
 getRow [] = ""
-getRow ((a,b,c) : xs) = (c++"          ")++(getRow xs)
+getRow ((d,a,b,c) : xs) = (c++", ")++(getRow xs)
 
 -- |'getRows' prints the rows which are the output of select query
 -- The argument is output of select parsed query
-getRows :: [[(String,Datatype,String)]] -> IO ()
+getRows :: [[(Int,String,Datatype,String)]] -> IO ()
 getRows [] = putStr ""
-getRows (x: xs) =  putStrLn(getRow x) *> (getRows xs)
+getRows (x: xs) =  putStrLn((let (a,b,c,d) = head x in show a++", ")++getRow x) *> (getRows xs)
 
 -- |'queryPrinter' prints the Select query output in a tabular fashion
 -- The argument is output of select parsed query
@@ -70,7 +70,7 @@ queryPrinter (OUT output) =  do
   case output of
     [] -> print("")
     otherwise -> putStrLn("------------------------------------------------------------")
-                 *> putStrLn(getHeaders (head output))
+                 *> putStrLn("PK, "++getHeaders (head output))
                  *> putStrLn("------------------------------------------------------------")
                  *> (getRows output)
 
