@@ -1,0 +1,76 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>HaSSQL-1.0.0: Haskell Simple Structured Query Language</title>
+    <link href="ocean.css" rel="stylesheet" type="text/css" title="Ocean" />
+    <link rel="stylesheet" type="text/css" href="quick-jump.css" />
+    <script src="haddock-bundle.min.js" async="async" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+        type="text/javascript"></script>
+</head>
+
+<body>
+    <div id="package-header">
+        <ul class="links" id="page-menu">
+            <li><a href="index.html">Contents</a></li>
+            <li><a href="doc-index.html">Index</a></li>
+        </ul>
+        <p class="caption">HaSSQL-1.0.0: Haskell Simple Structured Query Language</p>
+    </div>
+    <div id="content">
+        <div id="description">
+            <h1>HaSSQL-1.0.0: Haskell Simple Structured Query Language</h1>
+            <div class="doc">
+                <p style="font-size: 18px;">Usage and Syntax</p>
+                <ol>
+                    <li> Create Table </li>
+                    <pre>create table &lt;table_name&gt; (&lt;column_name&gt; &lt;datatype&gt; ,&lt;column_name&gt; &lt;datatype&gt; ... )</pre>
+                    <li> Insert Record</li>
+                    <pre>insert into &lt;table_name&gt; (&lt;column_name&gt;,&lt;column_name&gt; ...) values (&lt;value&gt;, &lt;value&gt; ...)</pre>
+                    <p>To add entries in columns by default: <pre>insert into &lt;table_name&gt; values (&lt;value&gt;, <&lt;&gt;value> ...)</pre></p>
+                    <li> Delete records</li>
+                    <pre>insert into &lt;table_name&gt; (&lt;column_name&gt;,&lt;column_name&gt; ...) values (&lt;value&gt;, &lt;value&gt; ...)</pre>
+                    <li> Select records</li>
+                    <pre>select &lt;column_name&gt; as &lt;alias&gt;, &lt;column_name&gt; as &lt;alias&gt; ... from &lt;table_name&gt; where &lt;value_expession&gt; order by &lt;value_expession&gt;, &lt;value_expession&gt; ...</pre>
+                    <pre>select &lt;column_name&gt; &lt;alias&gt;, &lt;column_name&gt; &lt;alias&gt; ... from &lt;table_name&gt; where &lt;value_expession&gt; order by &lt;value_expession&gt;, &lt;value_expession&gt; ...</pre>
+                    <p>To select all columns: <pre>select * from &lt;table_name&gt; where &lt;value_expession&gt; order by &lt;value_expession&gt;, &lt;value_expession&gt; ...&lt;</pre></p>
+                    <li>Displaying the whole database instance</li>
+                    <pre>output</pre>
+                    <li>Exiting:</li>
+                    <pre>exit</pre>
+                </ol>
+                <p>Please see the README on GitHub at <a
+                        href="https://github.com/IITH-SBJoshi/haskell-8#readme">https://github.com/IITH-SBJoshi/haskell-8#readme</a></p>
+            </div>
+        </div>
+        <div id="module-list">
+            <p class="caption">Modules</p>
+            <ul>
+                <li><span class="module"><a href="CreateParser.html">CreateParser</a></span> contains functions to parse
+                    CREATE query and evaluate it.</li>
+                <li><span class="module"><a href="Database.html">Database</a></span> The core module which manages all
+                    the data.</li>
+                <li><span class="module"><a href="DeleteParser.html">DeleteParser</a></span> contains functions to parse
+                    DELETE query and evaluate it.</li>
+                <li><span class="module"><a href="ExpressionParser.html">ExpressionParser</a></span> contains functions
+                    to parse expressions and evaluate them.</li>
+                <li><span class="module"><a href="Funcs.html">Funcs</a></span> Contains standard parsers for building up
+                    other parsers</li>
+                <li><span class="module"><a href="InsertParser.html">InsertParser</a></span> contains functions to parse
+                    INSERT query and evaluate it.</li>
+                <li><span class="module"><a href="QueryParser.html">QueryParser</a></span> contains functions to parse
+                    SELECT query and evaluate it.</li>
+                <li><span class="module"><a href="SQLParser.html">SQLParser</a></span> Integrate all SQL statements into
+                    a single module</li>
+            </ul>
+        </div>
+    </div>
+    <div id="footer">
+        <p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.22.0</p>
+    </div>
+</body>
+
+</html>
