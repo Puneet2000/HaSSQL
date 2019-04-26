@@ -17,7 +17,7 @@ check resp prev = case resp of
         hFlush stdout
         func prev
     DB arg -> do
-        putStrLn "Done!"
+        if resp==prev then putStrLn "Database Unchanged!" else putStrLn "Done!"
         hFlush stdout
         func resp
     ERROR arg -> do
