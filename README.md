@@ -12,6 +12,7 @@ Haskell Simple Structured Query Language is a subset of SQL with a local databas
 * [Usage and Syntax](#usage-and-syntax)
 * [Examples](#examples)
 * [Guidelines for contribution](#guidelines-for-contribution)
+* [External Packages and References](#external-packages-and-references)
 
 ## Description
 1. **Objective**
@@ -53,7 +54,7 @@ Haskell Simple Structured Query Language is a subset of SQL with a local databas
  <datatype> -> INTEGER | STRING | BOOL
  <value> -> <NumLit> | <BoolLit> | <StringLit>
  <BoolLit> -> True | False
- <StringLit> -> valid string in single quotes eg : 'Hello World`
+ <StringLit> -> valid string in single quotes eg : 'Hello World'
  <NumLit> -> (digit)+
  <value_expression> -> <NumLit> | <BoolLit> | <StringLit> 
  			| <Iden> | (<value_expression>) | * 
@@ -113,6 +114,10 @@ Haskell Simple Structured Query Language is a subset of SQL with a local databas
 	- Haddock understands various annotations in the source file, and puts them in the generated docs.
 	- Please refer [this link](https://www.haskell.org/haddock/doc/html/markup.html) to know how to comment your source code in order to generate good documentation.
 
+## External Packages and References:
+- [Introduction to Parsing with Parsec Haskell](http://jakewheat.github.io/intro_to_parsing/)
+- [Parsec Haskell](https://github.com/haskell/parsec)
+- [Introduction to Haskell](http://learnyouahaskell.com/)
  
 
 
