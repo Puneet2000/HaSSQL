@@ -23,10 +23,10 @@ Haskell Simple Structured Query Language is a subset of SQL with a local databas
 	- Supports ```From```, ```Where```, ```ORDER BY``` Clauses.
 	- Supports ```Integer```, ```Boolean```, ```String``` Literals.
 	- Support aliases in ```Select``` query.
-	- A local database backend support to perform queries live.
+	- A local database (volatile) backend support to perform queries live.
 	- A Command Line Interface for easy Usage.
 3. **Team**
-	- Shraiysh Gupta (CS17BTECH11050)
+	- Shraiysh Vaishay (CS17BTECH11050)
 	- Puneet Mangla (CS17BTECH11029)
 	- Lingam Sai Ramana Reddy (CS17BTECH11022)
 	- Hitesh (MA17BTECH11004)
@@ -75,6 +75,8 @@ Haskell Simple Structured Query Language is a subset of SQL with a local databas
       - ```select <column_name> as <alias>, <column_name> as <alias> ... from <table_name> where <value_expession> order by <value_expession>, <value_expession> ...```
       - ```select <column_name> <alias>, <column_name> <alias> ... from <table_name> where <value_expession> order by <value_expession>, <value_expession> ...```
       - To select all columns : ```select * from <table_name> where <value_expession> order by <value_expession>, <value_expession> ...```
+ 5. **Exiting** : ```exit```
+ 6. **Displaying whole database instance** : ```output```
  
  ## Examples
  ```
