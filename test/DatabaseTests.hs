@@ -197,7 +197,7 @@ testInsert =
 
 testInsertDefault :: H.Test
 testInsertDefault =
-    let myNewDB = DB.insertDefault ["99", "newString"] sampleDB "sampleTableOne"
+    let myNewDB = DB.insertDefault ["99", "newString"] [DB.INT, DB.STRING] sampleDB "sampleTableOne"
         condition = F.parseWithWSEof (Exp.valueExpr []) "sampleIntCol = 99"
         search99 = DB.find condition myNewDB "sampleTableOne"
         expected99 = [
